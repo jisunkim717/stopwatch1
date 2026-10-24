@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>거북이 연산 타이머</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #fdf7ec;
+    --card: #ffffff;
+    --ink: #4a3f35;
+    --soft: #9a8b7c;
+    --mint: #bfe8c9;
+    --mint-deep: #5fb877;
+    --pink: #ffb7c5;
+    --pink-deep: #f0768f;
+    --yellow: #ffe6a3;
+    --line: #f0e6d6;
+    --sky: #e3f4fb;
+    --grass: #cdeebf;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    background-image: radial-gradient(#f6e9d2 1.5px, transparent 1.5px);
+    background-size: 22px 22px;
+    color: var(--ink);
+    font-family: "Jua", "Malgun Gothic", system-ui, sans-serif;
+    padding: 28px 16px 48px;
+    display: flex;
+    justify-content: center;
+  }
+  .app { width: 100%; max-width: 980px; }
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 18px;
+    align-items: start;
+  }
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: minmax(0, 1fr); max-width: 560px; margin: 0 auto; }
+  }
+
+  h1 {
+    text-align: center;
+    font-weight: 400;
+    font-size: 28px;
+    margin: 0 0 4px;
+  }
+  h1 .hl { color: var(--mint-deep); }
+  .sub { text-align: center; color: var(--soft); margin: 0 0 20px; font-size: 15px; }
+
+  .card {
+    background: var(--card);
+    border-radius: 28px;
+    box-shadow: 0 6px 0 var(--line), 0 10px 30px rgba(120, 90, 50, 0.08);
+    padding: 20px;
+    margin-bottom: 18px;
+  }
+
+  /* 거북이 산책길 */
+  .pond {
+    position: relative;
+    height: 170px;
+    border-radius: 22px;
+    background: linear-gradient(var(--sky) 0 58%, var(--grass) 58% 100%);
+    overflow: hidden;
+  }
+  .cloud {
+    position: absolute;
+    width: 54px; height: 18px;
+    background: #fff;
+    border-radius: 20px;
+    opacity: .9;
+  }
+  .cloud::before {
+    content: "";
+    position: absolute;
+    width: 26px; height: 26px;
+    background: #fff;
+    border-radius: 50%;
+    left: 10px; top: -12px;
+  }
+  .cloud.c1 { left: 12%; top: 18px; }
+  .cloud.c2 { left: 62%; top: 34px; transform: scale(.75); }
+  .path {
+    position: absolute;
+    left: 16px; right: 16px; bottom: 26px;
+    border-bottom: 3px dashed #a9d79a;
+  }
+  .goal {
+    position: absolute;
+    right: 10px; bottom: 22px;
+    font-size: 30px;
+    line-height: 1;
+  }
+  .flower { position: absolute; bottom: 8px; font-size: 14px; }
+
+  .turtle-wrap {
+    position: absolute;
+    left: 6px;
+    bottom: 20px;
+    width: 120px;
+    will-change: transform;
+  }
+  .turtle { width: 120px; height: auto; display: block; overflow: visible; }
+
+  .bubble {
+    position: absolute;
+    bottom: 92px;
+    left: 54px;
+    white-space: nowrap;
+    background: #fff;
+    border-radius: 14px;
+    padding: 5px 11px;
+    font-size: 14px;
+    box-shadow: 0 2px 0 var(--line);
+  }
+  .bubble::after {
+    content: "";
+    position: absolute;
+    left: 14px; bottom: -6px;
+    border: 6px solid transparent;
+    border-top-color: #fff;
+    border-bottom: 0;
+  }
+
+  /* 거북이 움직임 */
+  .leg, .head, .body, .tail { transform-box: fill-box; }
+  .leg { transform-origin: 50% 0%; }
+  .head { transform-origin: 0% 60%; }
+  .body { transform-origin: 50% 100%; }
+  .walking .leg.a { animation: step .42s ease-in-out infinite alternate; }
+  .walking .leg.b { animation: step .42s ease-in-out infinite alternate-reverse; }
+  .walking .body { animation: bob .42s ease-in-out infinite alternate; }
+  .walking .head { animation: nod .84s ease-in-out infinite; }
+  .walking .tail { animation: wag .42s ease-in-out infinite alternate; transform-origin: 100% 50%; }
+  @keyframes step { from { transform: rotate(-22deg); } to { transform: rotate(22deg); } }
+  @keyframes bob { from { transform: translateY(0); } to { transform: translateY(-2.5px); } }
+  @keyframes nod { 0%,100% { transform: rotate(0); } 50% { transform: rotate(-6deg) translateX(2px); } }
+  @keyframes wag { from { transform: rotate(-12deg); } to { transform: rotate(12deg); } }
+  .eye-lid { transform-box: fill-box; transform-origin: center; animation: blink 4s infinite; }
+  @keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(.1); } }
+  .resting .head { transform: translateX(-4px); transition: transform .3s; }
+
+  .lettuce-count {
+    text-align: center;
+    color: var(--soft);
+    font-size: 14px;
+    margin-top: 10px;
+    min-height: 20px;
+  }
+
+  /* 시간 */
+  .time {
+    text-align: center;
+    font-size: clamp(56px, 17vw, 88px);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 1px;
+    margin: 6px 0 2px;
+  }
+  .time .ms { color: var(--soft); font-size: .55em; }
+  .status { text-align: center; color: var(--soft); font-size: 15px; margin-bottom: 18px; }
+
+  .buttons { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 12px; }
+  button {
+    font-family: inherit;
+    font-size: 19px;
+    border: none;
+    border-radius: 20px;
+    padding: 16px 8px;
+    cursor: pointer;
+    color: var(--ink);
+    transition: transform .08s, box-shadow .08s;
+  }
+  button:active:not(:disabled) { transform: translateY(3px); }
+  button:disabled { opacity: .45; cursor: default; }
+  .btn-main { background: var(--mint); box-shadow: 0 5px 0 var(--mint-deep); font-size: 22px; }
+  .btn-main.stop { background: var(--pink); box-shadow: 0 5px 0 var(--pink-deep); }
+  .btn-lap { background: var(--yellow); box-shadow: 0 5px 0 #e8c25c; }
+  .btn-reset { background: #f1ebe2; box-shadow: 0 5px 0 #ddd2c2; }
+  button:active:not(:disabled) { box-shadow: 0 2px 0 rgba(0,0,0,.12); }
+
+  .keys { text-align: center; color: var(--soft); font-size: 13px; margin-top: 16px; }
+  kbd {
+    font-family: inherit;
+    background: #f6efe4;
+    border-radius: 6px;
+    padding: 1px 6px;
+  }
+
+  /* 기록 */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+  .stat { background: #fbf6ee; border-radius: 18px; padding: 12px 6px; text-align: center; }
+  .stat .label { font-size: 13px; color: var(--soft); }
+  .stat .value { font-size: 22px; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .records-title { font-size: 18px; margin: 4px 4px 8px; }
+  ul { list-style: none; padding: 0; margin: 0; }
+  li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 12px;
+    border-radius: 16px;
+    font-variant-numeric: tabular-nums;
+  }
+  li:nth-child(odd) { background: #fcf9f4; }
+  li .num {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--mint);
+    display: grid; place-items: center;
+    font-size: 14px;
+    flex: none;
+  }
+  li .name { flex: 1; }
+  li .tag { font-size: 13px; padding: 2px 8px; border-radius: 10px; }
+  li .t { font-size: 18px; }
+  li.best .tag { background: #fff2bf; }
+  li.slow .tag { background: #ffe1e7; }
+  li.current { background: #eaf7ee !important; box-shadow: inset 0 0 0 2px var(--mint); }
+  li.current .t { color: var(--mint-deep); }
+  li.todo { color: #c9bcad; }
+  li.todo .num { background: #f1ebe2; color: #b3a594; }
+  .done-msg {
+    text-align: center;
+    background: #fff2bf;
+    border-radius: 16px;
+    padding: 12px;
+    margin-top: 12px;
+    font-size: 17px;
+    display: none;
+  }
+
+  @media (max-width: 420px) {
+    button { font-size: 16px; padding: 14px 4px; }
+    .btn-main { font-size: 19px; }
+    .stat .value { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+<main class="app">
+  <h1><span class="hl">거북이</span>랑 연산 연습 🐢</h1>
+  <p class="sub">한 문제 풀 때마다 “다 풀었어!”, 다음 문제는 “계속하기”를 눌러요</p>
+
+  <div class="layout">
+  <section class="card">
+    <div class="pond" id="pond">
+      <div class="cloud c1"></div>
+      <div class="cloud c2"></div>
+      <div class="path"></div>
+      <span class="flower" style="left:22%">🌼</span>
+      <span class="flower" style="left:48%">🌷</span>
+      <span class="flower" style="left:74%">🌼</span>
+      <div class="goal" title="1분이면 도착!">🥬</div>
+
+      <div class="turtle-wrap" id="turtleWrap">
+        <div class="bubble" id="bubble">준비됐어?</div>
+        <svg class="turtle" id="turtle" viewBox="0 0 160 110" aria-label="귀여운 거북이">
+          <!-- 꼬리 -->
+          <path class="tail" d="M28 74 Q14 72 10 80 Q20 82 30 80 Z" fill="#9fd88f" stroke="#5f9f55" stroke-width="2.5" stroke-linejoin="round"/>
+          <!-- 뒤쪽 다리 -->
+          <rect class="leg b" x="38" y="72" width="16" height="22" rx="8" fill="#8fcf80" stroke="#5f9f55" stroke-width="2.5"/>
+          <rect class="leg a" x="92" y="72" width="16" height="22" rx="8" fill="#8fcf80" stroke="#5f9f55" stroke-width="2.5"/>
+          <g class="body">
+            <!-- 머리 -->
+            <g class="head">
+              <path d="M112 66 Q116 50 126 46" stroke="#5f9f55" stroke-width="2.5" fill="#9fd88f"/>
+              <rect x="108" y="52" width="22" height="20" rx="10" fill="#9fd88f"/>
+              <circle cx="134" cy="52" r="19" fill="#9fd88f" stroke="#5f9f55" stroke-width="2.5"/>
+              <g class="eye-lid">
+                <circle cx="140" cy="47" r="4.8" fill="#3b2f27"/>
+                <circle cx="141.8" cy="45.2" r="1.7" fill="#fff"/>
+              </g>
+              <ellipse cx="143" cy="58" rx="5" ry="3" fill="#ffaabb" opacity=".8"/>
+              <path d="M146 54 Q149 57 152 54" stroke="#3b2f27" stroke-width="2" fill="none" stroke-linecap="round"/>
+            </g>
+            <!-- 등껍질 -->
+            <path d="M24 74 Q26 22 72 18 Q118 22 120 74 Z" fill="#7cc576" stroke="#4e8f48" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M72 30 L84 37 L84 51 L72 58 L60 51 L60 37 Z" fill="#a8dc8f" stroke="#4e8f48" stroke-width="2"/>
+            <path d="M44 46 L54 51 L54 63 L44 68 L36 63 Q36 52 44 46 Z" fill="#a8dc8f" stroke="#4e8f48" stroke-width="2"/>
+            <path d="M100 46 L108 52 Q108 62 108 63 L100 68 L90 63 L90 51 Z" fill="#a8dc8f" stroke="#4e8f48" stroke-width="2"/>
+            <circle cx="56" cy="30" r="3" fill="#fff" opacity=".5"/>
+            <circle cx="64" cy="25" r="1.8" fill="#fff" opacity=".5"/>
+            <rect x="18" y="68" width="108" height="11" rx="5.5" fill="#f6d98c" stroke="#d7ac4f" stroke-width="2.5"/>
+            <!-- 리본 -->
+            <g transform="translate(96 22) rotate(18)">
+              <path d="M0 0 L-9 -6 L-9 6 Z" fill="#ff9eb3" stroke="#f0768f" stroke-width="1.5" stroke-linejoin="round"/>
+              <path d="M0 0 L9 -6 L9 6 Z" fill="#ff9eb3" stroke="#f0768f" stroke-width="1.5" stroke-linejoin="round"/>
+              <circle r="3" fill="#f0768f"/>
+            </g>
+          </g>
+          <!-- 앞쪽 다리 -->
+          <rect class="leg a" x="28" y="74" width="17" height="22" rx="8.5" fill="#9fd88f" stroke="#5f9f55" stroke-width="2.5"/>
+          <rect class="leg b" x="100" y="74" width="17" height="22" rx="8.5" fill="#9fd88f" stroke="#5f9f55" stroke-width="2.5"/>
+        </svg>
+      </div>
+    </div>
+    <div class="lettuce-count" id="lettuceCount">상추까지 가는 데 1분이 걸려요</div>
+
+    <div class="time" id="time">00:00<span class="ms">.00</span></div>
+    <div class="status" id="status">시작 버튼을 누르면 거북이가 출발해요</div>
+
+    <div class="buttons">
+      <button class="btn-reset" id="resetBtn" disabled>처음부터</button>
+      <button class="btn-main" id="startBtn">시작!</button>
+      <button class="btn-lap" id="lapBtn" disabled>다 풀었어!</button>
+    </div>
+    <div class="keys"><kbd>Space</kbd> 시작/계속 · <kbd>Enter</kbd> 다 풀었어 · <kbd>R</kbd> 처음부터</div>
+  </section>
+
+  <section class="card">
+    <div class="records-title">📒 문제별 기록</div>
+    <ul id="records"></ul>
+    <div class="done-msg" id="doneMsg"></div>
+    <div class="stats" style="margin: 14px 0 0">
+      <div class="stat"><div class="label">푼 문제</div><div class="value" id="statCount">0개</div></div>
+      <div class="stat"><div class="label">평균</div><div class="value" id="statAvg">-</div></div>
+      <div class="stat"><div class="label">제일 빨리</div><div class="value" id="statBest">-</div></div>
+    </div>
+  </section>
+  </div>
+</main>
+
+<script>
+  const LAP_MS = 60000; // 거북이가 상추까지 가는 시간
+  const PROBLEMS = 10;  // 한 번에 푸는 문제 수
+
+  const $ = id => document.getElementById(id);
+  const timeEl = $('time'), statusEl = $('status'), bubbleEl = $('bubble');
+  const startBtn = $('startBtn'), lapBtn = $('lapBtn'), resetBtn = $('resetBtn');
+  const turtle = $('turtle'), turtleWrap = $('turtleWrap'), pond = $('pond');
+  const recordsEl = $('records'), doneMsgEl = $('doneMsg'), lettuceEl = $('lettuceCount');
+
+  let running = false;
+  let startTime = 0;   // performance.now() when last started
+  let elapsed = 0;     // ms accumulated before last start
+  let laps = [];       // per-problem durations in ms
+  let lapStart = 0;    // total elapsed when current problem started
+  let rafId = null;
+
+  const cheers = ['영차영차!', '할 수 있어!', '천천히 꼼꼼히~', '집중 집중!', '거의 다 왔어!'];
+  const praises = ['잘했어! 🌟', '최고야! 💚', '멋져요! ✨', '대단해! 🎉'];
+
+  function total() {
+    return running ? elapsed + (performance.now() - startTime) : elapsed;
+  }
+
+  function parts(ms) {
+    const cs = Math.floor(ms / 10) % 100;
+    const s = Math.floor(ms / 1000) % 60;
+    const m = Math.floor(ms / 60000);
+    const pad = n => String(n).padStart(2, '0');
+    return { main: pad(m) + ':' + pad(s), cs: '.' + pad(cs) };
+  }
+
+  function fmt(ms) {
+    const p = parts(ms);
+    return p.main + p.cs;
+  }
+
+  // 짧은 기록용: "5.32초" / "1분 3초"
+  function friendly(ms) {
+    if (ms < 60000) return (ms / 1000).toFixed(1) + '초';
+    const m = Math.floor(ms / 60000), s = Math.floor(ms / 1000) % 60;
+    return m + '분 ' + s + '초';
+  }
+
+  function say(text) { bubbleEl.textContent = text; }
+
+  function renderTime() {
+    const t = total();
+    const p = parts(t);
+    timeEl.innerHTML = p.main + '<span class="ms">' + p.cs + '</span>';
+
+    // 거북이는 흐른 시간만큼만 앞으로 가요
+    const travel = pond.clientWidth - turtleWrap.offsetWidth - 46;
+    const x = ((t % LAP_MS) / LAP_MS) * travel;
+    turtleWrap.style.transform = `translateX(${x}px)`;
+
+    const eaten = Math.floor(t / LAP_MS);
+    lettuceEl.textContent = eaten
+      ? `상추를 ${eaten}번 먹었어요 ` + '🥬'.repeat(Math.min(eaten, 10))
+      : '상추까지 가는 데 1분이 걸려요';
+
+    const cur = recordsEl.querySelector('.current .t');
+    if (cur) cur.textContent = friendly(t - lapStart);
+  }
+
+  function loop() {
+    renderTime();
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function allDone() { return laps.length >= PROBLEMS; }
+
+  // 1번~10번 칸을 항상 보여주고, 끝난 문제는 걸린 시간을 채워요
+  function renderRecords() {
+    recordsEl.innerHTML = '';
+    const best = laps.length > 1 ? Math.min(...laps) : null;
+    const slow = laps.length > 2 ? Math.max(...laps) : null;
+    const inProgress = !allDone() && (running || elapsed > lapStart);
+
+    for (let i = 0; i < PROBLEMS; i++) {
+      const li = document.createElement('li');
+      let tag = '', time = '-';
+      if (i < laps.length) {
+        time = friendly(laps[i]);
+        if (laps[i] === best) { li.className = 'best'; tag = '<span class="tag">🌟 제일 빨라요</span>'; }
+        else if (laps[i] === slow) { li.className = 'slow'; tag = '<span class="tag">🐢 차근차근</span>'; }
+      } else if (i === laps.length && inProgress) {
+        li.className = 'current';
+        tag = '<span class="tag">푸는 중…</span>';
+        time = friendly(total() - lapStart);
+      } else {
+        li.className = 'todo';
+      }
+      li.innerHTML = `<span class="num">${i + 1}</span><span class="name">${i + 1}번 문제</span>${tag}<span class="t">${time}</span>`;
+      recordsEl.appendChild(li);
+    }
+
+    $('statCount').textContent = laps.length + '개';
+    $('statAvg').textContent = laps.length ? friendly(laps.reduce((a, b) => a + b, 0) / laps.length) : '-';
+    $('statBest').textContent = laps.length ? friendly(Math.min(...laps)) : '-';
+
+    doneMsgEl.style.display = allDone() ? 'block' : 'none';
+    if (allDone()) doneMsgEl.textContent = `🎉 ${PROBLEMS}문제 모두 끝! 전체 ${friendly(elapsed)} 걸렸어요`;
+  }
+
+  function updateUI() {
+    const waitingNext = !running && laps.length > 0 && elapsed === lapStart;
+    startBtn.textContent = running ? '잠깐 멈춤' : (elapsed ? '계속하기' : '시작!');
+    startBtn.classList.toggle('stop', running);
+    startBtn.disabled = allDone();
+    lapBtn.disabled = !running;
+    resetBtn.disabled = running || elapsed === 0;
+    turtle.classList.toggle('walking', running);
+    turtle.classList.toggle('resting', !running && elapsed > 0);
+    if (allDone()) statusEl.textContent = `${PROBLEMS}문제를 다 풀었어요! 정말 잘했어요 💚`;
+    else if (running) statusEl.textContent = `${laps.length + 1}번 문제를 풀고 있어요`;
+    else if (waitingNext) statusEl.textContent = `${laps.length}번 끝! “계속하기”를 누르면 ${laps.length + 1}번 문제 시작`;
+    else if (elapsed) statusEl.textContent = '거북이가 쉬고 있어요. 다시 시작해볼까요?';
+    else statusEl.textContent = '시작 버튼을 누르면 거북이가 출발해요';
+  }
+
+  function pause() {
+    elapsed = total();
+    running = false;
+    cancelAnimationFrame(rafId);
+    renderTime();
+  }
+
+  function startStop() {
+    if (running) {
+      pause();
+      say('잠깐 쉬어요~ 💤');
+    } else {
+      if (allDone()) return;
+      startTime = performance.now();
+      running = true;
+      say(elapsed ? '다시 출발!' : '출발~!');
+      loop();
+    }
+    updateUI();
+    renderRecords();
+  }
+
+  // 다 풀었어 → 이번 문제 시간을 기록하고 멈춰요
+  function finishProblem() {
+    if (!running) return;
+    pause();
+    laps.push(elapsed - lapStart);
+    lapStart = elapsed;
+    say(allDone() ? '모두 끝! 최고야! 🎉' : praises[Math.floor(Math.random() * praises.length)]);
+    renderRecords();
+    updateUI();
+  }
+
+  function reset() {
+    if (running) return;
+    elapsed = 0;
+    laps = [];
+    lapStart = 0;
+    say('준비됐어?');
+    renderTime();
+    renderRecords();
+    updateUI();
+  }
+
+  // 달리는 동안 가끔 응원하기
+  setInterval(() => {
+    if (running) say(cheers[Math.floor(Math.random() * cheers.length)]);
+  }, 6000);
+
+  startBtn.addEventListener('click', startStop);
+  lapBtn.addEventListener('click', finishProblem);
+  resetBtn.addEventListener('click', reset);
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); startStop(); }
+    else if (e.key === 'Enter') { e.preventDefault(); finishProblem(); }
+    else if (e.key === 'r' || e.key === 'R') reset();
+  });
+  // 버튼에 포커스가 있을 때 Space가 클릭으로 한 번 더 눌리지 않게
+  document.addEventListener('keyup', e => { if (e.code === 'Space') e.preventDefault(); });
+  window.addEventListener('resize', renderTime);
+
+  renderTime();
+  renderRecords();
+  updateUI();
+</script>
+</body>
+</html>
