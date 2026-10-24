@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>스탑워치</title>
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --text: #1d1d1f;
+    --muted: #86868b;
+    --line: #e5e5ea;
+    --start: #34c759;
+    --stop: #ff3b30;
+    --neutral: #d1d1d6;
+    --best: #34c759;
+    --worst: #ff3b30;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000;
+      --card: #1c1c1e;
+      --text: #f5f5f7;
+      --muted: #8e8e93;
+      --line: #2c2c2e;
+      --neutral: #3a3a3c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 48px 16px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+  }
+  .card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--card);
+    border-radius: 24px;
+    padding: 32px 24px 24px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  }
+  .display {
+    text-align: center;
+    font-size: clamp(48px, 15vw, 72px);
+    font-weight: 300;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -1px;
+    margin: 8px 0 32px;
+  }
+  .display .ms { color: var(--muted); }
+  .buttons {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  button {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    border: none;
+    font-size: 17px;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--text);
+    background: var(--neutral);
+    transition: transform 0.08s, opacity 0.2s;
+  }
+  button:active { transform: scale(0.94); }
+  button:disabled { opacity: 0.4; cursor: default; }
+  #toggle { background: var(--start); color: #fff; }
+  #toggle.running { background: var(--stop); }
+  .hint {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    margin: 20px 0 8px;
+  }
+  ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+  li {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 4px;
+    border-top: 1px solid var(--line);
+    font-variant-numeric: tabular-nums;
+  }
+  li .total { color: var(--muted); font-size: 13px; margin-left: auto; margin-right: 16px; align-self: center; }
+  li.best { color: var(--best); }
+  li.worst { color: var(--worst); }
+</style>
+</head>
+<body>
+  <main class="card">
+    <div class="display" id="display">00:00<span class="ms">.00</span></div>
+    <div class="buttons">
+      <button id="lap" disabled>랩</button>
+      <button id="toggle">시작</button>
+    </div>
+    <p class="hint">Space: 시작/정지 · L: 랩 · R: 리셋</p>
+    <ol id="laps"></ol>
+  </main>
+
+<script>
+  const display = document.getElementById('display');
+  const toggleBtn = document.getElementById('toggle');
+  const lapBtn = document.getElementById('lap');
+  const lapList = document.getElementById('laps');
+
+  let running = false;
+  let startTime = 0;   // performance.now() at last start
+  let elapsed = 0;     // ms accumulated before last start
+  let laps = [];       // lap durations in ms
+  let lastLapTotal = 0;
+  let rafId = null;
+
+  function now() {
+    return running ? elapsed + performance.now() - startTime : elapsed;
+  }
+
+  function format(ms) {
+    const cs = Math.floor(ms / 10) % 100;
+    const s = Math.floor(ms / 1000) % 60;
+    const m = Math.floor(ms / 60000) % 60;
+    const h = Math.floor(ms / 3600000);
+    const pad = n => String(n).padStart(2, '0');
+    const main = (h ? h + ':' : '') + pad(m) + ':' + pad(s);
+    return { main, cs: '.' + pad(cs) };
+  }
+
+  function render() {
+    const t = format(now());
+    display.innerHTML = t.main + '<span class="ms">' + t.cs + '</span>';
+    if (running) rafId = requestAnimationFrame(render);
+  }
+
+  function renderLaps() {
+    lapList.innerHTML = '';
+    const min = Math.min(...laps), max = Math.max(...laps);
+    let total = 0;
+    const rows = laps.map((d, i) => {
+      total += d;
+      const li = document.createElement('li');
+      if (laps.length > 2 && d === min) li.className = 'best';
+      if (laps.length > 2 && d === max) li.className = 'worst';
+      const t = format(d), tt = format(total);
+      li.innerHTML = '<span>랩 ' + (i + 1) + '</span>' +
+        '<span class="total">' + tt.main + tt.cs + '</span>' +
+        '<span>' + t.main + t.cs + '</span>';
+      return li;
+    });
+    rows.reverse().forEach(li => lapList.appendChild(li));
+  }
+
+  function toggle() {
+    if (running) {
+      elapsed = now();
+      running = false;
+      cancelAnimationFrame(rafId);
+      render();
+    } else {
+      startTime = performance.now();
+      running = true;
+      render();
+    }
+    toggleBtn.textContent = running ? '정지' : '시작';
+    toggleBtn.classList.toggle('running', running);
+    lapBtn.textContent = running || elapsed === 0 ? '랩' : '리셋';
+    lapBtn.disabled = !running && elapsed === 0;
+  }
+
+  function lap() {
+    if (!running) return;
+    const t = now();
+    laps.push(t - lastLapTotal);
+    lastLapTotal = t;
+    renderLaps();
+  }
+
+  function reset() {
+    if (running) return;
+    elapsed = 0;
+    laps = [];
+    lastLapTotal = 0;
+    render();
+    renderLaps();
+    lapBtn.textContent = '랩';
+    lapBtn.disabled = true;
+  }
+
+  toggleBtn.addEventListener('click', toggle);
+  lapBtn.addEventListener('click', () => running ? lap() : reset());
+
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
+    else if (e.key === 'l' || e.key === 'L') lap();
+    else if (e.key === 'r' || e.key === 'R') reset();
+  });
+</script>
+</body>
+</html>

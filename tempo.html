@@ -1,0 +1,800 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tempo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@200;300;400;500;600&family=Noto+Sans+KR:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c11;
+    --glow: rgba(212, 180, 131, 0.10);
+    --surface: #11141b;
+    --surface-2: #171b24;
+    --line: rgba(255, 255, 255, 0.07);
+    --line-strong: rgba(255, 255, 255, 0.14);
+    --text: #ecebe6;
+    --muted: #868b97;
+    --faint: #4a4f5b;
+    --accent: #d4b483;
+    --accent-ink: #1a1408;
+    --accent-soft: rgba(212, 180, 131, 0.14);
+    --danger: #e5735f;
+    --shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+    --sans: "Inter", "Noto Sans KR", -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+    --serif: "Instrument Serif", "Times New Roman", serif;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f3efe6;
+      --glow: rgba(160, 124, 59, 0.12);
+      --surface: #fffdf8;
+      --surface-2: #f7f3ea;
+      --line: rgba(27, 29, 34, 0.08);
+      --line-strong: rgba(27, 29, 34, 0.16);
+      --text: #1b1d22;
+      --muted: #6b6f78;
+      --faint: #b9b4a8;
+      --accent: #a07c3b;
+      --accent-ink: #fffdf8;
+      --accent-soft: rgba(160, 124, 59, 0.12);
+      --danger: #c0533f;
+      --shadow: 0 30px 70px rgba(80, 60, 20, 0.10);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(1200px 600px at 20% -10%, var(--glow), transparent 60%),
+      radial-gradient(900px 500px at 110% 110%, var(--glow), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input, select { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 16px 48px; }
+
+  /* Header */
+  header {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    margin-bottom: 28px;
+  }
+  .brand { display: flex; align-items: baseline; gap: 12px; }
+  .brand h1 {
+    margin: 0; font-family: var(--serif); font-style: italic; font-weight: 400;
+    font-size: 34px; letter-spacing: -0.5px;
+  }
+  .brand h1 span { color: var(--accent); }
+  .brand small {
+    color: var(--muted); font-size: 11px; letter-spacing: 2.4px; text-transform: uppercase;
+  }
+  .head-right { display: flex; align-items: center; gap: 14px; color: var(--muted); font-size: 13px; }
+  .select {
+    appearance: none; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 999px; padding: 8px 32px 8px 14px; font-size: 13px;
+    background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+    background-position: calc(100% - 17px) 52%, calc(100% - 12px) 52%;
+    background-size: 5px 5px; background-repeat: no-repeat;
+  }
+
+  /* Layout */
+  .grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 960px) { .grid { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 22px;
+    box-shadow: var(--shadow);
+  }
+  .side { display: flex; flex-direction: column; gap: 20px; }
+
+  /* Hero */
+  .hero { padding: 32px 28px 24px; display: flex; flex-direction: column; align-items: center; position: sticky; top: 20px; }
+  @media (max-width: 960px) { .hero { position: static; } }
+  .dial { position: relative; width: min(380px, 100%); aspect-ratio: 1; }
+  .dial svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .tick { stroke: var(--faint); stroke-width: 1; }
+  .tick.major { stroke: var(--muted); stroke-width: 1.5; }
+  .track { fill: none; stroke: var(--line-strong); stroke-width: 2; }
+  .arc {
+    fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round;
+    transition: stroke-dashoffset 0.25s linear;
+  }
+  .sweep { fill: var(--accent); }
+  .dial.running .sweep { filter: drop-shadow(0 0 6px var(--accent)); }
+  .dial-glow {
+    position: absolute; inset: 14%; border-radius: 50%;
+    background: radial-gradient(circle, var(--accent-soft), transparent 70%);
+    opacity: 0; transition: opacity 0.6s;
+  }
+  .dial.running .dial-glow { opacity: 1; animation: breathe 4s ease-in-out infinite; }
+  @keyframes breathe { 50% { transform: scale(1.06); opacity: 0.6; } }
+  .dial-center {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center; padding: 0 18%;
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: 8px; max-width: 100%;
+    padding: 6px 12px; border-radius: 999px; background: var(--surface-2);
+    border: 1px solid var(--line); font-size: 12px; color: var(--muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .time {
+    font-family: "Inter", sans-serif; font-weight: 200; font-variant-numeric: tabular-nums;
+    font-size: clamp(44px, 9vw, 66px); letter-spacing: -2px; line-height: 1; margin: 18px 0 14px;
+  }
+  .time .sec { color: var(--muted); }
+  .subline { font-size: 12px; color: var(--muted); letter-spacing: 0.2px; min-height: 16px; }
+  .subline b { color: var(--accent); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+  .memo {
+    width: 100%; max-width: 420px; margin-top: 22px; padding: 13px 16px;
+    background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .memo:focus { border-color: var(--accent); }
+  .memo::placeholder { color: var(--faint); }
+
+  .controls { display: flex; align-items: center; gap: 14px; margin-top: 20px; }
+  .btn-ghost {
+    height: 48px; padding: 0 18px; border-radius: 999px; background: transparent;
+    border: 1px solid var(--line-strong); color: var(--muted); font-size: 13px;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+  }
+  .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+  .btn-main {
+    height: 64px; min-width: 168px; padding: 0 28px; border-radius: 999px; border: none;
+    background: var(--accent); color: var(--accent-ink); font-weight: 600; font-size: 15px;
+    letter-spacing: 0.3px; display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    box-shadow: 0 10px 30px var(--accent-soft); transition: transform 0.1s, filter 0.2s, background 0.3s;
+  }
+  .btn-main:hover { filter: brightness(1.06); }
+  .btn-main:active { transform: scale(0.97); }
+  .btn-main.running { background: var(--text); color: var(--bg); box-shadow: none; }
+  .btn-main svg { width: 14px; height: 14px; }
+  .hints { margin-top: 18px; font-size: 11px; color: var(--faint); display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+  kbd {
+    font-family: var(--sans); font-size: 10px; padding: 2px 6px; border-radius: 5px;
+    border: 1px solid var(--line-strong); color: var(--muted); margin-right: 4px;
+  }
+
+  /* Summary */
+  .summary { display: grid; grid-template-columns: repeat(4, 1fr); }
+  .stat { padding: 20px 18px; border-left: 1px solid var(--line); min-width: 0; }
+  .stat:first-child { border-left: none; }
+  .stat label { display: block; font-size: 11px; color: var(--muted); letter-spacing: 0.4px; margin-bottom: 8px; }
+  .stat .v {
+    font-family: var(--serif); font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .stat .v small { font-family: var(--sans); font-size: 12px; color: var(--muted); margin-left: 2px; }
+  .stat.gold .v { color: var(--accent); }
+  @media (max-width: 560px) {
+    .summary { grid-template-columns: repeat(2, 1fr); }
+    .stat:nth-child(3) { border-left: none; }
+    .stat:nth-child(n+3) { border-top: 1px solid var(--line); }
+  }
+
+  /* Panels */
+  .panel { padding: 8px 0 6px; }
+  .panel-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 14px 20px 10px;
+  }
+  .panel-head h2 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 22px; }
+  .panel-head .actions { display: flex; gap: 6px; }
+  .btn-sm {
+    height: 30px; padding: 0 12px; border-radius: 999px; font-size: 12px;
+    background: var(--surface-2); border: 1px solid var(--line); color: var(--muted);
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .btn-sm:hover { color: var(--text); border-color: var(--line-strong); }
+
+  .proj {
+    display: grid; grid-template-columns: 22px 1fr auto 36px; align-items: center; gap: 12px;
+    padding: 12px 20px; border-top: 1px solid var(--line); cursor: pointer; position: relative;
+    transition: background 0.2s;
+  }
+  .proj:hover { background: var(--surface-2); }
+  .proj.selected::before {
+    content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 2px;
+    background: var(--accent); border-radius: 2px;
+  }
+  .proj .key { font-size: 11px; color: var(--faint); text-align: center; }
+  .proj .meta { min-width: 0; }
+  .proj .name { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+  .proj .name span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .proj .client { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .proj .client .tag {
+    font-size: 10px; padding: 1px 6px; border-radius: 4px; margin-left: 6px;
+    background: var(--surface-2); border: 1px solid var(--line);
+  }
+  .proj .tot { text-align: right; font-variant-numeric: tabular-nums; }
+  .proj .tot .h { font-size: 15px; }
+  .proj .tot .amt { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .play {
+    width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line-strong);
+    background: transparent; display: grid; place-items: center; color: var(--muted);
+    transition: all 0.2s;
+  }
+  .play svg { width: 11px; height: 11px; }
+  .proj:hover .play { color: var(--text); border-color: var(--muted); }
+  .proj.live .play { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .proj.live .tot .h { color: var(--accent); }
+  .del {
+    position: absolute; right: 62px; top: 50%; transform: translateY(-50%);
+    opacity: 0; border: none; background: none; color: var(--faint); font-size: 16px; padding: 4px;
+  }
+  .proj:hover .del { opacity: 1; }
+  .del:hover { color: var(--danger); }
+  .proj:hover .tot { visibility: hidden; }
+
+  form.add {
+    display: none; grid-template-columns: 1fr 1fr; gap: 8px; padding: 14px 20px;
+    border-top: 1px solid var(--line); background: var(--surface-2);
+  }
+  form.add.open { display: grid; }
+  form.add input[type=text], form.add input[type=number] {
+    padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--surface); outline: none; min-width: 0;
+  }
+  form.add input:focus { border-color: var(--accent); }
+  form.add .row { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  form.add label.chk { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
+  form.add .btn-save {
+    height: 34px; padding: 0 16px; border-radius: 999px; border: none;
+    background: var(--accent); color: var(--accent-ink); font-weight: 600; font-size: 12px;
+  }
+
+  /* Timeline + log */
+  .timeline { padding: 6px 20px 16px; }
+  .bar {
+    position: relative; height: 28px; border-radius: 8px; background: var(--surface-2);
+    border: 1px solid var(--line); overflow: hidden;
+  }
+  .seg { position: absolute; top: 4px; bottom: 4px; border-radius: 4px; min-width: 2px; }
+  .seg.live { animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.55; } }
+  .now { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--accent); }
+  .scale { position: relative; height: 16px; margin-top: 6px; font-size: 10px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .scale span { position: absolute; transform: translateX(-50%); }
+
+  .entry {
+    display: grid; grid-template-columns: 8px 1fr auto 24px; gap: 12px; align-items: center;
+    padding: 11px 20px; border-top: 1px solid var(--line);
+  }
+  .entry .what { min-width: 0; }
+  .entry .what div:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .entry .when { font-size: 11px; color: var(--muted); margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .entry .dur { text-align: right; font-variant-numeric: tabular-nums; }
+  .entry .dur small { display: block; font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .entry .x { border: none; background: none; color: var(--faint); font-size: 16px; padding: 0; }
+  .entry .x:hover { color: var(--danger); }
+  .entry.live .dur { color: var(--accent); }
+  .empty { padding: 26px 20px 22px; text-align: center; color: var(--faint); font-size: 13px; border-top: 1px solid var(--line); }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 20px);
+    background: var(--text); color: var(--bg); padding: 11px 18px; border-radius: 999px;
+    font-size: 13px; opacity: 0; pointer-events: none; transition: all 0.3s;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  @media (max-width: 560px) {
+    header { flex-wrap: wrap; }
+    .hero { padding: 24px 16px 20px; }
+    .btn-main { min-width: 140px; }
+    .btn-ghost { padding: 0 14px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <h1>Tempo<span>.</span></h1>
+      <small>Billable time, beautifully</small>
+    </div>
+    <div class="head-right">
+      <span id="today"></span>
+      <select class="select" id="rounding" title="청구 단위">
+        <option value="6">0.1h 단위 (6분)</option>
+        <option value="15">0.25h 단위 (15분)</option>
+        <option value="0">실제 시간</option>
+      </select>
+    </div>
+  </header>
+
+  <div class="grid">
+    <section class="card hero">
+      <div class="dial" id="dial">
+        <div class="dial-glow"></div>
+        <svg viewBox="0 0 320 320" aria-hidden="true">
+          <g id="ticks"></g>
+          <circle class="track" cx="160" cy="160" r="132"></circle>
+          <circle class="arc" id="arc" cx="160" cy="160" r="132" transform="rotate(-90 160 160)"></circle>
+          <circle class="sweep" id="sweep" cx="160" cy="8" r="4"></circle>
+        </svg>
+        <div class="dial-center">
+          <div class="chip" id="chip"><span class="dot"></span><span>프로젝트 선택</span></div>
+          <div class="time" id="time">00:00<span class="sec">:00</span></div>
+          <div class="subline" id="subline"></div>
+        </div>
+      </div>
+
+      <input class="memo" id="memo" type="text" maxlength="120" placeholder="지금 하는 일 — 예: 고객 인터뷰 정리">
+
+      <div class="controls">
+        <button class="btn-ghost" id="back5" title="시작 시각을 5분 앞으로 (B)">−5분 소급</button>
+        <button class="btn-main" id="toggle"></button>
+      </div>
+
+      <div class="hints">
+        <span><kbd>Space</kbd>시작 / 정지</span>
+        <span><kbd>1–9</kbd>프로젝트 전환</span>
+        <span><kbd>M</kbd>메모</span>
+        <span><kbd>B</kbd>5분 소급</span>
+      </div>
+    </section>
+
+    <div class="side">
+      <section class="card summary">
+        <div class="stat"><label>오늘 총 시간</label><div class="v" id="sTotal">0.0<small>h</small></div></div>
+        <div class="stat"><label>청구 시간</label><div class="v" id="sBill">0.0<small>h</small></div></div>
+        <div class="stat"><label>가동률</label><div class="v" id="sUtil">—</div></div>
+        <div class="stat gold"><label>청구액</label><div class="v" id="sAmt">₩0</div></div>
+      </section>
+
+      <section class="card panel">
+        <div class="panel-head">
+          <h2>Engagements</h2>
+          <div class="actions"><button class="btn-sm" id="addToggle">+ 프로젝트</button></div>
+        </div>
+        <form class="add" id="addForm" autocomplete="off">
+          <input type="text" name="client" placeholder="클라이언트" required>
+          <input type="text" name="name" placeholder="프로젝트명" required>
+          <input type="number" name="rate" placeholder="시간당 단가 (₩)" min="0" step="10000">
+          <div class="row" style="grid-column:auto">
+            <label class="chk"><input type="checkbox" name="billable" checked> 청구 대상</label>
+          </div>
+          <div class="row">
+            <span></span>
+            <button class="btn-save" type="submit">추가</button>
+          </div>
+        </form>
+        <div id="projects"></div>
+      </section>
+
+      <section class="card panel">
+        <div class="panel-head">
+          <h2>Today</h2>
+          <div class="actions">
+            <button class="btn-sm" id="copy">요약 복사</button>
+            <button class="btn-sm" id="csv">CSV</button>
+          </div>
+        </div>
+        <div class="timeline">
+          <div class="bar" id="bar"></div>
+          <div class="scale" id="scale"></div>
+        </div>
+        <div id="log"></div>
+      </section>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+  const KEY = 'tempo.v1';
+  const COLORS = ['#d4b483', '#7fa7c9', '#9cc5a1', '#d98c7a', '#b69ad9', '#e0c36a', '#6fc2c0', '#c98fb0'];
+  const ARC_C = 2 * Math.PI * 132;
+  const $ = id => document.getElementById(id);
+  const ICON_PLAY = '<svg viewBox="0 0 12 12"><path d="M2.5 1.5v9l8-4.5z" fill="currentColor"/></svg>';
+  const ICON_PAUSE = '<svg viewBox="0 0 12 12"><rect x="2" y="1.5" width="3" height="9" rx="1" fill="currentColor"/><rect x="7" y="1.5" width="3" height="9" rx="1" fill="currentColor"/></svg>';
+
+  const uid = () => Math.random().toString(36).slice(2, 10);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  function defaults() {
+    const projects = [
+      { id: uid(), client: 'Client A', name: '시장 진입 전략', rate: 300000, billable: true, color: COLORS[0] },
+      { id: uid(), client: 'Client B', name: '운영 효율화 실사', rate: 250000, billable: true, color: COLORS[1] },
+      { id: uid(), client: '내부', name: '제안서 · 사내 업무', rate: 0, billable: false, color: COLORS[2] },
+    ];
+    return { projects, entries: [], active: null, selectedId: projects[0].id, rounding: 6 };
+  }
+  function load() {
+    try {
+      const s = JSON.parse(localStorage.getItem(KEY));
+      if (s && Array.isArray(s.projects)) return s;
+    } catch (e) {}
+    return defaults();
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  let state = load();
+  const project = id => state.projects.find(p => p.id === id);
+
+  // ---------- Formatting ----------
+  const pad = n => String(n).padStart(2, '0');
+  function clock(ms) {
+    const s = Math.floor(ms / 1000);
+    return { hm: pad(Math.floor(s / 3600)) + ':' + pad(Math.floor(s / 60) % 60), s: pad(s % 60) };
+  }
+  const hhmm = ts => { const d = new Date(ts); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+  const hours = ms => (ms / 3600000).toFixed(state.rounding === 15 ? 2 : 1);
+  const won = x => '₩' + Math.round(x).toLocaleString('ko-KR');
+  function shortWon(x) {
+    if (x >= 1e8) return '₩' + (x / 1e8).toFixed(1) + '억';
+    if (x >= 1e4) return '₩' + Math.round(x / 1e4).toLocaleString('ko-KR') + '만';
+    return won(x);
+  }
+  function billMs(ms) {
+    const unit = state.rounding * 60000;
+    return unit ? Math.ceil(ms / unit) * unit : ms;
+  }
+
+  // ---------- Data ----------
+  function todayStart() { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); }
+  function todayItems() {
+    const t0 = todayStart();
+    const items = state.entries.filter(e => e.end >= t0);
+    if (state.active) items.push({ ...state.active, id: 'live', end: Date.now(), live: true });
+    return items.sort((a, b) => a.start - b.start);
+  }
+  function stats() {
+    const items = todayItems();
+    const per = {};
+    let total = 0, bill = 0, amount = 0;
+    for (const e of items) {
+      const p = project(e.projectId);
+      if (!p) continue;
+      const d = e.end - e.start;
+      const r = per[p.id] || (per[p.id] = { ms: 0, bill: 0, amt: 0 });
+      r.ms += d; total += d;
+      if (p.billable) {
+        const b = billMs(d);
+        r.bill += b; bill += b;
+        r.amt += b / 3600000 * p.rate; amount += b / 3600000 * p.rate;
+      }
+    }
+    return { items, per, total, bill, amount };
+  }
+
+  // ---------- Actions ----------
+  function start(at) {
+    if (state.active || !project(state.selectedId)) return;
+    state.active = { projectId: state.selectedId, start: at || Date.now(), memo: $('memo').value.trim() };
+    save(); renderAll(); loop();
+  }
+  function stop() {
+    if (!state.active) return;
+    const a = state.active;
+    a.memo = $('memo').value.trim();
+    if (Date.now() - a.start >= 1000) state.entries.push({ id: uid(), ...a, end: Date.now() });
+    state.active = null;
+    $('memo').value = '';
+    save(); renderAll();
+  }
+  function toggle() { state.active ? stop() : start(); }
+  function select(pid) {
+    if (!project(pid)) return;
+    if (state.active && state.active.projectId === pid) { stop(); return; }
+    const wasRunning = !!state.active;
+    if (wasRunning) stop();
+    state.selectedId = pid;
+    if (wasRunning) start(); else { save(); renderAll(); }
+    if (wasRunning) toast(project(pid).name + '(으)로 전환했습니다');
+  }
+  function backdate() {
+    if (state.active) state.active.start -= 5 * 60000;
+    else start(Date.now() - 5 * 60000);
+    save(); renderAll();
+    toast('시작 시각을 5분 앞당겼습니다');
+  }
+
+  // ---------- Rendering ----------
+  function buildTicks() {
+    let html = '';
+    for (let i = 0; i < 60; i++) {
+      const major = i % 5 === 0;
+      const a = i / 60 * Math.PI * 2;
+      const r1 = major ? 144 : 147, r2 = 153;
+      const x1 = 160 + Math.sin(a) * r1, y1 = 160 - Math.cos(a) * r1;
+      const x2 = 160 + Math.sin(a) * r2, y2 = 160 - Math.cos(a) * r2;
+      html += `<line class="tick${major ? ' major' : ''}" x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}"/>`;
+    }
+    $('ticks').innerHTML = html;
+    $('arc').style.strokeDasharray = ARC_C;
+  }
+
+  function renderHero() {
+    const a = state.active;
+    const p = project(a ? a.projectId : state.selectedId);
+    const elapsed = a ? Date.now() - a.start : 0;
+    const c = clock(elapsed);
+    $('time').innerHTML = c.hm + '<span class="sec">:' + c.s + '</span>';
+
+    const sec = (elapsed % 60000) / 60000;
+    $('sweep').setAttribute('transform', `rotate(${sec * 360} 160 160)`);
+    const unit = state.rounding * 60000 || 3600000;
+    const prog = a ? (elapsed % unit) / unit : 0;
+    $('arc').style.strokeDashoffset = ARC_C * (1 - prog);
+
+    if (a && p && p.billable && state.rounding) {
+      const left = clock(unit - (elapsed % unit));
+      $('subline').innerHTML = `다음 ${state.rounding === 6 ? '0.1h' : '0.25h'}까지 <b>${left.hm.slice(3)}:${left.s}</b>`;
+    } else if (a) {
+      $('subline').textContent = p && !p.billable ? '비청구 시간 기록 중' : '기록 중';
+    } else {
+      $('subline').textContent = p ? 'Space를 눌러 시작하세요' : '프로젝트를 선택하세요';
+    }
+    document.title = a ? `${c.hm}:${c.s} · ${p ? p.name : ''}` : 'Tempo';
+  }
+
+  function renderStatic() {
+    const a = state.active;
+    const p = project(a ? a.projectId : state.selectedId);
+    $('dial').classList.toggle('running', !!a);
+    $('chip').innerHTML = p
+      ? `<span class="dot" style="background:${p.color}"></span><span>${esc(p.client)} · ${esc(p.name)}</span>`
+      : '<span class="dot"></span><span>프로젝트 선택</span>';
+    const btn = $('toggle');
+    btn.classList.toggle('running', !!a);
+    btn.innerHTML = a ? ICON_PAUSE + '정지 · 기록' : ICON_PLAY + '시작';
+    $('rounding').value = String(state.rounding);
+    if (a && document.activeElement !== $('memo')) $('memo').value = a.memo || '';
+  }
+
+  function renderSummary(s) {
+    $('sTotal').innerHTML = hours(s.total) + '<small>h</small>';
+    $('sBill').innerHTML = hours(s.bill) + '<small>h</small>';
+    const billActual = s.items.reduce((t, e) => {
+      const p = project(e.projectId);
+      return t + (p && p.billable ? e.end - e.start : 0);
+    }, 0);
+    $('sUtil').innerHTML = s.total ? Math.round(billActual / s.total * 100) + '<small>%</small>' : '—';
+    $('sAmt').textContent = shortWon(s.amount);
+    $('sAmt').title = won(s.amount);
+  }
+
+  function renderProjects(s) {
+    const a = state.active;
+    $('projects').innerHTML = state.projects.map((p, i) => {
+      const r = s.per[p.id] || { ms: 0, amt: 0 };
+      const live = a && a.projectId === p.id;
+      const c = clock(r.ms);
+      return `<div class="proj${p.id === state.selectedId ? ' selected' : ''}${live ? ' live' : ''}" data-pid="${p.id}">
+        <div class="key">${i < 9 ? i + 1 : ''}</div>
+        <div class="meta">
+          <div class="name"><span class="dot" style="background:${p.color}"></span><span>${esc(p.name)}</span></div>
+          <div class="client">${esc(p.client)}${p.billable ? (p.rate ? ' · ' + won(p.rate) + '/h' : '') : '<span class="tag">비청구</span>'}</div>
+        </div>
+        <div class="tot"><div class="h" data-t="${p.id}">${c.hm}:${c.s}</div><div class="amt" data-a="${p.id}">${p.billable ? shortWon(r.amt) : '—'}</div></div>
+        <button class="play" data-play="${p.id}" title="${live ? '정지' : '이 프로젝트로 시작'}">${live ? ICON_PAUSE : ICON_PLAY}</button>
+        <button class="del" data-del="${p.id}" title="삭제">×</button>
+      </div>`;
+    }).join('') || '<div class="empty">프로젝트를 추가하세요</div>';
+  }
+
+  function renderTimeline(s) {
+    const t0 = todayStart();
+    const first = s.items.length ? s.items[0].start : Infinity;
+    const lo = Math.min(t0 + 9 * 3600000, first);
+    const hi = Math.max(t0 + 19 * 3600000, Date.now());
+    const span = hi - lo;
+    const pct = t => ((t - lo) / span * 100).toFixed(3) + '%';
+    $('bar').innerHTML = s.items.map(e => {
+      const p = project(e.projectId);
+      return `<div class="seg${e.live ? ' live' : ''}" style="left:${pct(e.start)};width:${((e.end - e.start) / span * 100).toFixed(3)}%;background:${p ? p.color : 'var(--muted)'}" title="${p ? esc(p.name) : ''} ${hhmm(e.start)}–${hhmm(e.end)}"></div>`;
+    }).join('') + `<div class="now" style="left:${pct(Date.now())}"></div>`;
+
+    let marks = '';
+    const h0 = Math.ceil((lo - t0) / 3600000), h1 = Math.floor((hi - t0) / 3600000);
+    const step = h1 - h0 > 12 ? 3 : 2;
+    for (let h = h0; h <= h1; h++) {
+      if (h % step) continue;
+      marks += `<span style="left:${pct(t0 + h * 3600000)}">${pad(h % 24)}:00</span>`;
+    }
+    $('scale').innerHTML = marks;
+  }
+
+  function renderLog(s) {
+    const items = [...s.items].reverse();
+    $('log').innerHTML = items.map(e => {
+      const p = project(e.projectId);
+      const d = e.end - e.start, c = clock(d);
+      const billed = p && p.billable ? hours(billMs(d)) + 'h 청구' : '비청구';
+      return `<div class="entry${e.live ? ' live' : ''}">
+        <span class="dot" style="background:${p ? p.color : 'var(--muted)'}"></span>
+        <div class="what">
+          <div>${esc(e.memo || (p ? p.name : '삭제된 프로젝트'))}</div>
+          <div class="when">${hhmm(e.start)} – ${e.live ? '진행 중' : hhmm(e.end)} · ${p ? esc(p.client) : ''}</div>
+        </div>
+        <div class="dur"><span ${e.live ? 'id="liveDur"' : ''}>${c.hm}:${c.s}</span><small ${e.live ? 'id="liveBill"' : ''}>${billed}</small></div>
+        ${e.live ? '<span></span>' : `<button class="x" data-x="${e.id}" title="기록 삭제">×</button>`}
+      </div>`;
+    }).join('') || '<div class="empty">아직 기록이 없습니다. 첫 세션을 시작해 보세요.</div>';
+  }
+
+  function renderAll() {
+    const s = stats();
+    renderStatic(); renderHero(); renderSummary(s); renderProjects(s); renderTimeline(s); renderLog(s);
+  }
+
+  // Live update: update text in place so buttons stay clickable.
+  function renderLive() {
+    const s = stats();
+    renderSummary(s);
+    renderTimeline(s);
+    const a = state.active;
+    if (!a) return;
+    const r = s.per[a.projectId];
+    const p = project(a.projectId);
+    if (r) {
+      const c = clock(r.ms);
+      const t = document.querySelector(`[data-t="${a.projectId}"]`);
+      const am = document.querySelector(`[data-a="${a.projectId}"]`);
+      if (t) t.textContent = c.hm + ':' + c.s;
+      if (am && p.billable) am.textContent = shortWon(r.amt);
+    }
+    const d = Date.now() - a.start, c = clock(d);
+    if ($('liveDur')) $('liveDur').textContent = c.hm + ':' + c.s;
+    if ($('liveBill') && p && p.billable) $('liveBill').textContent = hours(billMs(d)) + 'h 청구';
+  }
+
+  let rafId = null, lastSec = -1;
+  function loop() {
+    cancelAnimationFrame(rafId);
+    const frame = () => {
+      if (!state.active) { renderHero(); return; }
+      renderHero();
+      const sec = Math.floor(Date.now() / 1000);
+      if (sec !== lastSec) { lastSec = sec; renderLive(); }
+      rafId = requestAnimationFrame(frame);
+    };
+    frame();
+  }
+
+  // ---------- Export ----------
+  function csv() {
+    const s = stats();
+    const rows = [['날짜', '시작', '종료', '클라이언트', '프로젝트', '업무 내용', '실제(분)', '청구(h)', '단가', '청구액']];
+    for (const e of s.items) {
+      const p = project(e.projectId) || { client: '', name: '', billable: false, rate: 0 };
+      const d = e.end - e.start;
+      const b = p.billable ? billMs(d) / 3600000 : 0;
+      rows.push([new Date(e.start).toLocaleDateString('ko-KR'), hhmm(e.start), hhmm(e.end), p.client, p.name,
+        e.memo || '', Math.round(d / 60000), b.toFixed(2), p.rate || 0, Math.round(b * (p.rate || 0))]);
+    }
+    const text = '﻿' + rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
+    const d = new Date();
+    const link = Object.assign(document.createElement('a'), { href: url, download: `timesheet_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}.csv` });
+    document.body.appendChild(link); link.click(); link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast('타임시트를 내려받았습니다');
+  }
+
+  async function copySummary() {
+    const s = stats();
+    const lines = [`■ ${new Date().toLocaleDateString('ko-KR')} 업무 시간 요약`];
+    for (const p of state.projects) {
+      const r = s.per[p.id];
+      if (!r) continue;
+      lines.push(`- ${p.client} · ${p.name}: ${hours(r.ms)}h` + (p.billable ? ` (청구 ${hours(r.bill)}h${p.rate ? ', ' + won(r.amt) : ''})` : ' (비청구)'));
+    }
+    lines.push(`합계 ${hours(s.total)}h · 청구 ${hours(s.bill)}h · ${won(s.amount)}`);
+    const text = lines.join('\n');
+    try { await navigator.clipboard.writeText(text); }
+    catch (e) {
+      const ta = Object.assign(document.createElement('textarea'), { value: text });
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    }
+    toast('요약을 클립보드에 복사했습니다');
+  }
+
+  let toastTimer;
+  function toast(msg) {
+    const t = $('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+  }
+
+  // ---------- Events ----------
+  $('toggle').addEventListener('click', toggle);
+  $('back5').addEventListener('click', backdate);
+  $('rounding').addEventListener('change', e => { state.rounding = +e.target.value; save(); renderAll(); });
+  $('memo').addEventListener('input', e => { if (state.active) { state.active.memo = e.target.value; save(); } });
+  $('memo').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.target.blur(); if (!state.active) start(); }
+    if (e.key === 'Escape') e.target.blur();
+  });
+
+  $('projects').addEventListener('click', e => {
+    const del = e.target.closest('[data-del]');
+    if (del) {
+      e.stopPropagation();
+      const p = project(del.dataset.del);
+      if (state.active && state.active.projectId === p.id) { toast('진행 중인 프로젝트는 삭제할 수 없습니다'); return; }
+      if (!confirm(`'${p.name}' 프로젝트를 삭제할까요?`)) return;
+      state.projects = state.projects.filter(x => x.id !== p.id);
+      if (state.selectedId === p.id) state.selectedId = state.projects[0] ? state.projects[0].id : null;
+      save(); renderAll(); return;
+    }
+    const play = e.target.closest('[data-play]');
+    if (play) {
+      const pid = play.dataset.play;
+      if (state.active && state.active.projectId === pid) stop();
+      else if (state.active) select(pid);
+      else { state.selectedId = pid; start(); }
+      return;
+    }
+    const row = e.target.closest('[data-pid]');
+    if (row) select(row.dataset.pid);
+  });
+
+  $('log').addEventListener('click', e => {
+    const x = e.target.closest('[data-x]');
+    if (!x) return;
+    state.entries = state.entries.filter(en => en.id !== x.dataset.x);
+    save(); renderAll();
+    toast('기록을 삭제했습니다');
+  });
+
+  $('addToggle').addEventListener('click', () => {
+    const f = $('addForm');
+    f.classList.toggle('open');
+    if (f.classList.contains('open')) f.client.focus();
+  });
+  $('addForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const f = e.target;
+    const p = {
+      id: uid(), client: f.client.value.trim(), name: f.name.value.trim(),
+      rate: Math.max(0, +f.rate.value || 0), billable: f.billable.checked,
+      color: COLORS[state.projects.length % COLORS.length],
+    };
+    if (!p.client || !p.name) return;
+    state.projects.push(p);
+    if (!state.selectedId) state.selectedId = p.id;
+    f.reset(); f.billable.checked = true; f.classList.remove('open');
+    save(); renderAll();
+    toast('프로젝트를 추가했습니다');
+  });
+
+  $('csv').addEventListener('click', csv);
+  $('copy').addEventListener('click', copySummary);
+
+  const typing = el => el && (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA');
+  document.addEventListener('keydown', e => {
+    if (typing(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
+    else if (/^[1-9]$/.test(e.key)) { const p = state.projects[+e.key - 1]; if (p) select(p.id); }
+    else if (e.key === 'm' || e.key === 'M') { e.preventDefault(); $('memo').focus(); }
+    else if (e.key === 'b' || e.key === 'B') backdate();
+  });
+  // Stop Space on a focused button from also firing a click.
+  document.addEventListener('keyup', e => { if (e.code === 'Space' && e.target.tagName === 'BUTTON') e.preventDefault(); });
+
+  // Keep other tabs in sync.
+  window.addEventListener('storage', e => { if (e.key === KEY) { state = load(); renderAll(); if (state.active) loop(); } });
+
+  $('today').textContent = new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
+  buildTicks();
+  renderAll();
+  if (state.active) loop();
+  setInterval(() => { if (!state.active) renderTimeline(stats()); }, 60000);
+</script>
+</body>
+</html>

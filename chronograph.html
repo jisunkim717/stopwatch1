@@ -1,0 +1,1350 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AURÈLE Chronographe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0c;
+    --text: #efe8df;
+    --muted: #8e877e;
+    --dim: #5d5852;
+    --rose: #e6b896;
+    --rose-deep: #b47b58;
+    --line: rgba(230, 184, 150, .18);
+    --line-soft: rgba(255, 255, 255, .07);
+    --card: rgba(255, 255, 255, .028);
+    --red: #e8604a;
+    --serif: 'Cormorant Garamond', 'Noto Serif KR', Georgia, serif;
+    --sans: 'Jost', 'Noto Sans KR', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-weight: 300;
+    -webkit-font-smoothing: antialiased;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(900px 700px at 26% 42%, rgba(130, 85, 55, .22), transparent 65%),
+      radial-gradient(700px 600px at 88% 6%, rgba(40, 62, 115, .2), transparent 60%);
+  }
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: .07;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  header, main { position: relative; z-index: 1; }
+
+  /* ---------- header ---------- */
+  header.top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 28px 40px 4px;
+  }
+  .brand .name {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 26px;
+    letter-spacing: .42em;
+    color: var(--rose);
+  }
+  .brand .tag {
+    font-size: 10.5px;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .top-right { display: flex; gap: 22px; align-items: center; }
+  .date { font-family: var(--serif); font-style: italic; font-size: 19px; color: var(--muted); }
+  .icon-btn {
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font: inherit;
+    font-size: 11px;
+    letter-spacing: .16em;
+    padding: 8px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: color .2s, border-color .2s;
+  }
+  .icon-btn:hover { color: var(--text); border-color: var(--rose); }
+  .icon-btn.on { color: var(--rose); }
+
+  /* ---------- layout ---------- */
+  main {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: 48px;
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 8px 40px 64px;
+    align-items: start;
+  }
+  .stage {
+    position: sticky;
+    top: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  #watch {
+    width: min(100%, 500px, 64vh);
+    height: auto;
+    display: block;
+    user-select: none;
+    -webkit-user-select: none;
+    overflow: visible;
+  }
+  .pusher { cursor: pointer; transition: transform .12s ease-out; outline: none; }
+  .pusher.pressed { transform: translateY(5px); }
+  .pusher:focus-visible rect:first-of-type { stroke: #fff; }
+
+  .readout { text-align: center; margin-top: -4px; }
+  .readout .label {
+    font-size: 11px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--muted);
+    min-height: 16px;
+  }
+  .readout .mode { color: var(--rose); margin-right: 10px; }
+  .readout .time {
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: clamp(48px, 6.6vw, 74px);
+    line-height: 1.08;
+    font-variant-numeric: lining-nums tabular-nums;
+    letter-spacing: .02em;
+  }
+  .readout .time small { font-size: .42em; color: var(--muted); margin-left: 2px; }
+  .readout .sub { font-size: 13px; color: var(--muted); letter-spacing: .04em; min-height: 20px; }
+  .readout .sub .over { color: var(--red); }
+
+  .controls { display: flex; gap: 14px; justify-content: center; margin-top: 20px; }
+  .hints { margin-top: 14px; font-size: 11px; color: var(--dim); letter-spacing: .06em; }
+  kbd {
+    font-family: var(--sans);
+    font-size: 10px;
+    border: 1px solid var(--line-soft);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--muted);
+  }
+
+  .btn {
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: .16em;
+    padding: 13px 28px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: border-color .2s, background .2s, transform .1s, box-shadow .2s;
+    white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--rose); }
+  .btn:active { transform: scale(.97); }
+  .btn.primary {
+    background: linear-gradient(135deg, #f3d6bd, #c48c68 55%, #e9c3a3);
+    color: #1d130d;
+    border-color: transparent;
+    font-weight: 500;
+    box-shadow: 0 10px 34px -12px rgba(230, 184, 150, .65);
+  }
+  .btn.primary.running {
+    background: transparent;
+    color: var(--rose);
+    border-color: var(--rose);
+    box-shadow: 0 0 0 4px rgba(230, 184, 150, .07);
+  }
+  .btn.sm { padding: 9px 18px; font-size: 11px; }
+  .btn.ghost { border-style: dashed; color: var(--muted); }
+  .btn.danger:hover { border-color: var(--red); color: var(--red); }
+
+  /* ---------- panel ---------- */
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    padding: 30px 30px 34px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 40px 80px -40px rgba(0, 0, 0, .7);
+  }
+  .tabs { display: flex; gap: 30px; border-bottom: 1px solid var(--line-soft); margin-bottom: 28px; }
+  .tab {
+    background: none;
+    border: 0;
+    color: var(--muted);
+    font: inherit;
+    font-size: 12px;
+    letter-spacing: .26em;
+    padding: 0 0 15px;
+    cursor: pointer;
+    position: relative;
+    transition: color .2s;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.on { color: var(--text); }
+  .tab.on::after {
+    content: "";
+    position: absolute;
+    left: -6px;
+    right: -6px;
+    bottom: -1px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--rose), transparent);
+  }
+  .dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--red);
+    margin-left: 8px;
+    vertical-align: 2px;
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse { 50% { opacity: .25; } }
+
+  .eyebrow {
+    font-size: 10.5px;
+    letter-spacing: .26em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .row-title { display: flex; justify-content: space-between; align-items: baseline; margin: 30px 0 12px; }
+  .hint { font-size: 11px; letter-spacing: .04em; text-transform: none; color: var(--dim); }
+  .figure {
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: 50px;
+    line-height: 1.05;
+    font-variant-numeric: lining-nums tabular-nums;
+    margin-top: 6px;
+  }
+  .figure .unit { font-size: .5em; color: var(--rose); margin-left: 3px; }
+  .figure.sm { font-size: 30px; margin-top: 14px; }
+  .figure.xl { font-size: 58px; color: var(--rose); }
+  .stats { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 18px; }
+  .stats > div + div { border-left: 1px solid var(--line-soft); padding-left: 18px; }
+
+  .field {
+    width: 100%;
+    background: rgba(255, 255, 255, .03);
+    border: 1px solid var(--line-soft);
+    border-radius: 10px;
+    padding: 11px 13px;
+    color: var(--text);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 300;
+    transition: border-color .2s, background .2s;
+  }
+  .field::placeholder { color: var(--dim); }
+  .field:focus { outline: none; border-color: var(--rose); background: rgba(255, 255, 255, .05); }
+  .field.bare { background: transparent; border-color: transparent; padding: 6px 8px; }
+  .field.bare:hover { border-color: var(--line-soft); }
+  .field.bare:focus { border-color: var(--rose); }
+  select.field { appearance: none; -webkit-appearance: none; cursor: pointer; }
+  select.field option { background: #16161a; }
+  input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  textarea.field { resize: vertical; min-height: 64px; line-height: 1.5; }
+
+  /* projects */
+  .projects { display: flex; flex-direction: column; gap: 4px; }
+  .proj {
+    display: grid;
+    grid-template-columns: 22px 1fr auto 38px 22px;
+    gap: 14px;
+    align-items: center;
+    padding: 13px 14px;
+    border-radius: 14px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background .2s, border-color .2s;
+  }
+  .proj:hover { background: rgba(255, 255, 255, .03); }
+  .proj.sel { border-color: var(--line-soft); }
+  .proj.active {
+    border-color: var(--line);
+    background: linear-gradient(90deg, rgba(230, 184, 150, .09), rgba(230, 184, 150, .01));
+  }
+  .proj .key { font-family: var(--serif); font-size: 16px; color: var(--dim); text-align: center; }
+  .proj.active .key { color: var(--rose); }
+  .proj .client { font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+  .proj .pname { font-size: 15px; font-weight: 400; margin-top: 2px; }
+  .proj .ptime { text-align: right; font-variant-numeric: tabular-nums; }
+  .proj .t { font-family: var(--serif); font-size: 20px; }
+  .proj .b { font-size: 11px; color: var(--rose); letter-spacing: .08em; }
+  .play {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--rose);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: background .2s;
+  }
+  .play:hover { background: rgba(230, 184, 150, .12); }
+  .proj.active .play { background: var(--rose); color: #1d130d; border-color: transparent; }
+  .del {
+    background: none;
+    border: 0;
+    color: var(--dim);
+    font-size: 18px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .2s, color .2s;
+    padding: 0;
+  }
+  .proj:hover .del, .item:hover .del, .sess:hover .del { opacity: 1; }
+  .del:hover { color: var(--red); }
+  @media (hover: none) { .del { opacity: .6; } }
+  .add { display: grid; grid-template-columns: 1fr 1.4fr auto; gap: 8px; margin-top: 14px; }
+  .note-box { margin-top: 26px; }
+  .note-box .eyebrow { margin-bottom: 10px; }
+  .empty { color: var(--dim); font-size: 13px; padding: 18px 14px; }
+
+  /* meeting */
+  .cost-card {
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 22px 24px;
+    background: radial-gradient(120% 140% at 0% 0%, rgba(230, 184, 150, .09), transparent 60%);
+  }
+  .cost-sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .meter { height: 2px; background: var(--line-soft); border-radius: 2px; margin-top: 18px; overflow: hidden; }
+  .meter i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--rose-deep), var(--rose)); }
+  .meter.over i { background: var(--red); }
+  .meter-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 8px; font-variant-numeric: tabular-nums; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; margin-top: 24px; }
+  .grid2 label { display: flex; flex-direction: column; gap: 7px; font-size: 10.5px; letter-spacing: .2em; color: var(--muted); }
+  .grid2 label.wide { grid-column: 1 / -1; }
+  .agenda { display: flex; flex-direction: column; gap: 4px; }
+  .item {
+    display: grid;
+    grid-template-columns: 28px 1fr 78px 64px 20px;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 10px 12px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    position: relative;
+    transition: background .2s, border-color .2s;
+  }
+  .item:hover { background: rgba(255, 255, 255, .025); }
+  .item.cur { border-color: var(--line); background: rgba(230, 184, 150, .05); }
+  .item .num { font-family: var(--serif); font-size: 18px; color: var(--dim); text-align: center; }
+  .item.cur .num { color: var(--rose); }
+  .item.done { opacity: .55; }
+  .item .it-min { display: flex; align-items: center; gap: 2px; font-size: 12px; color: var(--muted); }
+  .item .it-min input { width: 48px; text-align: right; }
+  .item .it-time { text-align: right; font-variant-numeric: tabular-nums; font-size: 14px; color: var(--muted); }
+  .item.cur .it-time { color: var(--text); }
+  .item.over .it-time { color: var(--red); }
+  .item .bar { position: absolute; left: 48px; right: 40px; bottom: 6px; height: 2px; background: var(--line-soft); border-radius: 2px; overflow: hidden; }
+  .item .bar i { display: block; height: 100%; width: 0; background: var(--rose); }
+  .item.over .bar i { background: var(--red); }
+  .actions-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
+
+  /* timesheet */
+  .seg { display: inline-flex; border: 1px solid var(--line-soft); border-radius: 999px; padding: 3px; margin-bottom: 24px; }
+  .seg button {
+    background: none;
+    border: 0;
+    color: var(--muted);
+    font: inherit;
+    font-size: 12px;
+    letter-spacing: .12em;
+    padding: 8px 18px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .seg button.on { background: rgba(230, 184, 150, .14); color: var(--rose); }
+  table.sum { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.sum th {
+    font-weight: 400;
+    font-size: 10.5px;
+    letter-spacing: .2em;
+    color: var(--muted);
+    text-align: left;
+    padding: 0 0 10px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  table.sum td { padding: 12px 0; border-bottom: 1px solid var(--line-soft); }
+  table.sum .r { text-align: right; font-variant-numeric: tabular-nums; }
+  table.sum td.r.b { color: var(--rose); font-family: var(--serif); font-size: 18px; }
+  table.sum .c { font-size: 10.5px; letter-spacing: .18em; color: var(--muted); display: block; }
+  .sessions { display: flex; flex-direction: column; }
+  .sess {
+    display: grid;
+    grid-template-columns: 96px 1fr 58px 20px;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 13px;
+  }
+  .sess .when { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; line-height: 1.5; }
+  .sess .what .p { font-weight: 400; }
+  .sess .what .field { margin-top: 4px; font-size: 12.5px; padding: 5px 8px; color: var(--muted); }
+  .sess .dur { text-align: right; font-variant-numeric: tabular-nums; }
+  .sess .dur b { display: block; color: var(--rose); font-weight: 400; }
+  .sess .live { color: var(--red); font-size: 11px; }
+  .export { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; gap: 12px; flex-wrap: wrap; }
+
+  #toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translate(-50%, 20px);
+    background: rgba(24, 22, 20, .92);
+    border: 1px solid var(--line);
+    color: var(--text);
+    padding: 12px 22px;
+    border-radius: 999px;
+    font-size: 13px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s, transform .3s;
+    z-index: 10;
+    backdrop-filter: blur(10px);
+  }
+  #toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+  @media (max-width: 960px) {
+    header.top { padding: 20px 16px 0; }
+    .date { display: none; }
+    main { grid-template-columns: 1fr; padding: 4px 16px 48px; gap: 28px; }
+    .stage { position: static; }
+    #watch { width: min(100%, 460px); }
+    .panel { padding: 22px 18px 26px; border-radius: 20px; }
+    .hints { display: none; }
+  }
+  @media (max-width: 520px) {
+    .stats { grid-template-columns: 1fr 1fr; }
+    .stats > div:first-child { grid-column: 1 / -1; }
+    .stats > div:nth-child(2) { border-left: 0; padding-left: 0; }
+    .add { grid-template-columns: 1fr 1fr; }
+    .add .btn { grid-column: 1 / -1; }
+    .grid2 { grid-template-columns: 1fr; }
+    .proj { grid-template-columns: 1fr auto 38px 20px; }
+    .proj .key { display: none; }
+    .item { grid-template-columns: 22px 1fr 70px 52px 18px; }
+    .btn { padding: 12px 20px; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <div class="name">AURÈLE</div>
+    <div class="tag">Chronographe Conseil · 컨설턴트를 위한 크로노그래프</div>
+  </div>
+  <div class="top-right">
+    <div class="date" id="date"></div>
+    <button class="icon-btn" id="soundBtn"></button>
+  </div>
+</header>
+
+<main>
+  <section class="stage">
+    <svg id="watch" viewBox="0 -10 500 520" role="img" aria-label="크로노그래프 시계"></svg>
+    <div class="readout">
+      <div class="label" id="roLabel"></div>
+      <div class="time" id="roTime">00:00:00</div>
+      <div class="sub" id="roSub"></div>
+    </div>
+    <div class="controls">
+      <button class="btn primary" id="btnPrimary">시작</button>
+      <button class="btn" id="btnSecondary">전환</button>
+    </div>
+    <div class="hints" id="hints"></div>
+  </section>
+
+  <section class="panel" id="panel"></section>
+</main>
+
+<div id="toast"></div>
+
+<script>
+(() => {
+  /* ================= utilities ================= */
+  const KEY = 'aurele.chrono.v1';
+  const $ = s => document.querySelector(s);
+  const uid = () => Math.random().toString(36).slice(2, 10);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const pad = n => String(n).padStart(2, '0');
+  const round1 = n => Math.round(n * 10) / 10;
+  const hms = ms => { const s = Math.floor(Math.max(0, ms) / 1000); return pad(Math.floor(s / 3600)) + ':' + pad(Math.floor(s / 60) % 60) + ':' + pad(s % 60); };
+  const mmss = ms => { const s = Math.floor(Math.abs(ms) / 1000); return pad(Math.floor(s / 60)) + ':' + pad(s % 60); };
+  const shortDur = ms => { const m = Math.round(ms / 60000), h = Math.floor(m / 60); return h ? `${h}시간 ${m % 60}분` : `${m}분`; };
+  const billH = ms => ms > 0 ? Math.ceil(ms / 360000) / 10 : 0;   // 6분(0.1h) 단위 올림
+  const fmtH = h => h.toFixed(1) + 'h';
+  const won = n => '₩' + Math.round(n).toLocaleString('ko-KR');
+  const dayStart = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); };
+  const weekStart = () => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.getTime(); };
+  const ymd = t => { const d = new Date(t); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+  const hm = t => { const d = new Date(t); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+  const md = t => { const d = new Date(t); return `${d.getMonth() + 1}.${d.getDate()} (${'일월화수목금토'[d.getDay()]})`; };
+
+  /* ================= state ================= */
+  function defaults() {
+    return {
+      tab: 'billing',
+      source: 'billing',
+      range: 'today',
+      sound: true,
+      projects: [
+        { id: uid(), client: 'ACME 그룹', name: '성장 전략 수립' },
+        { id: uid(), client: '베타 리테일', name: '원가 절감 실사' },
+        { id: uid(), client: '사내', name: '제안서 작성' },
+      ],
+      selectedProjectId: null,
+      sessions: [],
+      activeSessionId: null,
+      meeting: {
+        title: '주간 스티어링 커미티',
+        attendees: 5,
+        rate: 300000,
+        projectId: '',
+        items: [
+          { id: uid(), title: '현황 공유', minutes: 10, spent: 0, chimed: false },
+          { id: uid(), title: '핵심 이슈 논의', minutes: 20, spent: 0, chimed: false },
+          { id: uid(), title: '다음 단계 합의', minutes: 10, spent: 0, chimed: false },
+        ],
+        current: 0,
+        running: false,
+        segStart: 0,
+        startedAt: null,
+      },
+    };
+  }
+  function load() {
+    try {
+      const s = JSON.parse(localStorage.getItem(KEY));
+      if (s && Array.isArray(s.projects)) return Object.assign(defaults(), s);
+    } catch (e) {}
+    return defaults();
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  let state = load();
+  if (!state.selectedProjectId && state.projects[0]) state.selectedProjectId = state.projects[0].id;
+
+  function commit() { save(); renderPanel(); renderControls(); }
+
+  /* ================= billing ================= */
+  const proj = id => state.projects.find(p => p.id === id);
+  const active = () => state.sessions.find(s => s.id === state.activeSessionId);
+  const sessMs = s => (s.end ?? Date.now()) - s.start;
+  const selectedProject = () => proj(state.selectedProjectId) || state.projects[0];
+
+  function totals(since, pid) {
+    let ms = 0, bill = 0, count = 0;
+    for (const s of state.sessions) {
+      if (s.start < since || (pid && s.projectId !== pid)) continue;
+      const d = sessMs(s);
+      ms += d; bill += billH(d); count++;
+    }
+    return { ms, bill: round1(bill), count };
+  }
+
+  function closeSession(s) {
+    s.end = Date.now();
+    if (s.end - s.start < 5000) state.sessions = state.sessions.filter(x => x !== s);  // 실수로 누른 5초 미만 기록은 버림
+    state.activeSessionId = null;
+  }
+  function startProject(id) {
+    const cur = active();
+    if (cur && cur.projectId === id) { stopBilling(); return; }
+    if (cur) closeSession(cur);
+    const s = { id: uid(), projectId: id, start: Date.now(), end: null, note: '' };
+    state.sessions.push(s);
+    state.activeSessionId = s.id;
+    if (state.selectedProjectId !== id) flyback();
+    state.selectedProjectId = id;
+    setSource('billing');
+    commit();
+  }
+  function stopBilling() { const cur = active(); if (cur) closeSession(cur); commit(); }
+  function toggleBilling() {
+    if (active()) return stopBilling();
+    const p = selectedProject();
+    if (p) startProject(p.id); else toast('먼저 프로젝트를 추가하세요');
+  }
+  function switchProject() {
+    if (!state.projects.length) return;
+    const i = state.projects.findIndex(p => p.id === selectedProject()?.id);
+    const next = state.projects[(i + 1) % state.projects.length];
+    if (active()) return startProject(next.id);
+    state.selectedProjectId = next.id;
+    flyback();
+    setSource('billing');
+    commit();
+  }
+
+  /* ================= meeting ================= */
+  const M = () => state.meeting;
+  const itemMs = i => { const m = M(), it = m.items[i]; return it ? it.spent + (m.running && i === m.current ? Date.now() - m.segStart : 0) : 0; };
+  const mtgTotal = () => M().items.reduce((a, _, i) => a + itemMs(i), 0);
+  const mtgPlanned = () => M().items.reduce((a, it) => a + (+it.minutes || 0) * 60000, 0);
+  const cost = ms => (+M().attendees || 0) * (+M().rate || 0) * ms / 3600000;
+
+  function mtgCommit() {
+    const m = M();
+    if (!m.running) return;
+    const it = m.items[m.current];
+    if (it) it.spent += Date.now() - m.segStart;
+    m.segStart = Date.now();
+  }
+  function mtgToggle() {
+    const m = M();
+    if (!m.items.length) return toast('안건을 먼저 추가하세요');
+    if (m.running) { mtgCommit(); m.running = false; }
+    else { if (!m.startedAt) m.startedAt = Date.now(); m.running = true; m.segStart = Date.now(); }
+    setSource('meeting');
+    commit();
+  }
+  function mtgJump(i) {
+    const m = M();
+    if (i === m.current || !m.items[i]) return;
+    mtgCommit();
+    m.current = i;
+    flyback();
+    setSource('meeting');
+    commit();
+  }
+  function mtgNext() {
+    const m = M();
+    if (m.current >= m.items.length - 1) return toast('마지막 안건입니다');
+    mtgJump(m.current + 1);
+  }
+  function mtgEnd() {
+    const m = M();
+    mtgCommit();
+    const total = m.items.reduce((a, it) => a + it.spent, 0);
+    if (total < 1000) return toast('기록할 회의 시간이 없습니다');
+    m.running = false;
+    const p = proj(m.projectId);
+    if (p) {
+      const end = Date.now();
+      state.sessions.push({ id: uid(), projectId: p.id, start: end - total, end, note: `회의 · ${m.title} (${m.attendees}명, ${won(cost(total))})` });
+      toast(`회의 종료 · ${p.client}에 ${fmtH(billH(total))} 기록했습니다`);
+    } else {
+      toast(`회의 종료 · ${hms(total)} · ${won(cost(total))}`);
+    }
+    m.items.forEach(it => { it.spent = 0; it.chimed = false; });
+    m.current = 0;
+    m.startedAt = null;
+    flyback();
+    commit();
+  }
+
+  /* ================= source / tabs ================= */
+  function setSource(src) { if (state.source !== src) { state.source = src; flyback(); } }
+  function setTab(t) { state.tab = t; if (t !== 'timesheet') setSource(t); commit(); }
+  const primaryAction = () => state.source === 'meeting' ? mtgToggle() : toggleBilling();
+  const secondaryAction = () => state.source === 'meeting' ? mtgNext() : switchProject();
+
+  /* ================= sound ================= */
+  let actx = null;
+  function audio() {
+    if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+    if (actx.state === 'suspended') actx.resume();
+    return actx;
+  }
+  function tone(freq, start, dur, gain, type = 'sine') {
+    const a = audio(); if (!a) return;
+    const o = a.createOscillator(), g = a.createGain(), t = a.currentTime + start;
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(gain, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(a.destination);
+    o.start(t); o.stop(t + dur + 0.05);
+  }
+  const click = () => { if (state.sound) { tone(2600, 0, 0.025, 0.05, 'triangle'); tone(1400, 0.012, 0.03, 0.03, 'triangle'); } };
+  const chime = () => { if (state.sound) { tone(1318.5, 0, 1.6, 0.16); tone(1760, 0.22, 1.9, 0.12); tone(2637, 0.22, 0.8, 0.03); } };
+
+  /* ================= watch construction ================= */
+  const C = 250;
+  const P = (r, deg, cx = C, cy = C) => { const a = deg * Math.PI / 180; return [cx + r * Math.sin(a), cy - r * Math.cos(a)]; };
+  const f = n => n.toFixed(2);
+  function tick(r1, r2, deg, w, color, cx, cy, op = 1) {
+    const [x1, y1] = P(r1, deg, cx, cy), [x2, y2] = P(r2, deg, cx, cy);
+    return `<line x1="${f(x1)}" y1="${f(y1)}" x2="${f(x2)}" y2="${f(y2)}" stroke="${color}" stroke-width="${w}" opacity="${op}"/>`;
+  }
+  function arcPath(r, a0, a1) {
+    if (a1 - a0 < 0.05) return '';
+    a1 = Math.min(a1, a0 + 359.99);
+    const [x0, y0] = P(r, a0), [x1, y1] = P(r, a1);
+    return `M${f(x0)},${f(y0)} A${r},${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${f(x1)},${f(y1)}`;
+  }
+
+  function makeDial() {
+    const S = 900, c = document.createElement('canvas');
+    c.width = c.height = S;
+    const g = c.getContext('2d'), R = S / 2;
+    const base = g.createRadialGradient(R, R * 0.8, 0, R, R, R);
+    base.addColorStop(0, '#2c5394');
+    base.addColorStop(0.5, '#173465');
+    base.addColorStop(1, '#07122a');
+    g.fillStyle = base; g.fillRect(0, 0, S, S);
+    for (let i = 0; i < 900; i++) {           // 선레이 브러싱
+      const a = i / 900 * Math.PI * 2;
+      g.strokeStyle = `rgba(255,255,255,${Math.random() * 0.03})`;
+      g.lineWidth = 1;
+      g.beginPath(); g.moveTo(R, R); g.lineTo(R + Math.cos(a) * R, R + Math.sin(a) * R); g.stroke();
+    }
+    const v = g.createRadialGradient(R, R, R * 0.55, R, R, R);
+    v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.5)');
+    g.fillStyle = v; g.fillRect(0, 0, S, S);
+    return c.toDataURL('image/jpeg', 0.92);
+  }
+  function makeSheen() {
+    const S = 700, c = document.createElement('canvas');
+    c.width = c.height = S;
+    const g = c.getContext('2d');
+    if (!g.createConicGradient) return '';
+    const cg = g.createConicGradient(0, S / 2, S / 2);
+    [[0, 0], [0.07, 0.26], [0.16, 0], [0.5, 0], [0.57, 0.2], [0.66, 0], [1, 0]]
+      .forEach(([p, a]) => cg.addColorStop(p, `rgba(150,190,255,${a})`));
+    g.fillStyle = cg; g.fillRect(0, 0, S, S);
+    return c.toDataURL('image/png');
+  }
+
+  function subdial(cx, cy, n, major, labels, name, id) {
+    let s = `<circle cx="${cx}" cy="${cy}" r="40" fill="url(#rose)" opacity=".85"/>`;
+    s += `<circle cx="${cx}" cy="${cy}" r="38.8" fill="#0a1734"/>`;
+    for (let r = 2; r < 38; r += 1.6) s += `<circle cx="${cx}" cy="${cy}" r="${r.toFixed(1)}" fill="none" stroke="#fff" stroke-opacity=".055" stroke-width=".6"/>`;
+    for (let i = 0; i < n; i++) {
+      const long = i % major === 0;
+      s += tick(long ? 30 : 33.5, 37, i * 360 / n, long ? 0.9 : 0.45, '#ece4d8', cx, cy, long ? 0.95 : 0.7);
+    }
+    for (const [t, deg] of labels) {
+      const [x, y] = P(23.5, deg, cx, cy);
+      s += `<text x="${f(x)}" y="${f(y)}" font-family="Jost, sans-serif" font-size="6.5" fill="#ece4d8" text-anchor="middle" dominant-baseline="central">${t}</text>`;
+    }
+    s += `<text x="${cx}" y="${cy + 13}" font-family="Jost, sans-serif" font-size="4.2" letter-spacing="1.2" fill="#ece4d8" opacity=".55" text-anchor="middle">${name}</text>`;
+    s += `<g id="${id}" filter="url(#sh)"><g transform="translate(${cx},${cy})"><path d="M0,7 L-1.7,0 L0,-31 L1.7,0Z" fill="url(#rose)"/><circle r="2.6" fill="url(#rose)"/><circle r="1" fill="#5a3826"/></g></g>`;
+    return s;
+  }
+
+  function pusher(deg, id, title) {
+    return `<g transform="rotate(${deg} ${C} ${C})">
+      <rect x="245" y="36" width="10" height="16" fill="url(#roseV)"/>
+      <g class="pusher" id="${id}" tabindex="0" role="button" aria-label="${title}"><title>${title}</title>
+        <rect x="236" y="14" width="28" height="30" fill="transparent"/>
+        <rect x="241" y="22" width="18" height="16" rx="3.5" fill="url(#rose)" stroke="#7c4c35" stroke-width=".6"/>
+        <rect x="243.5" y="24" width="13" height="3" rx="1.5" fill="#fff" opacity=".35"/>
+      </g></g>`;
+  }
+
+  function buildWatch() {
+    const svg = $('#watch');
+    const dial = makeDial(), sheen = makeSheen();
+    let s = `<defs>
+      <linearGradient id="rose" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#f8dfc8"/><stop offset=".42" stop-color="#c48c68"/>
+        <stop offset=".68" stop-color="#f3d3b8"/><stop offset="1" stop-color="#93603f"/></linearGradient>
+      <linearGradient id="roseV" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#8a573c"/><stop offset=".5" stop-color="#f0cfb3"/><stop offset="1" stop-color="#8a573c"/></linearGradient>
+      <radialGradient id="caseG" cx=".32" cy=".26" r=".95">
+        <stop offset="0" stop-color="#fde9d7"/><stop offset=".32" stop-color="#dcaa86"/>
+        <stop offset=".6" stop-color="#a46b4c"/><stop offset=".82" stop-color="#e9c2a3"/><stop offset="1" stop-color="#734630"/></radialGradient>
+      <linearGradient id="bezelG" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#f7dac2"/><stop offset=".3" stop-color="#a86f50"/>
+        <stop offset=".55" stop-color="#f1cbab"/><stop offset=".8" stop-color="#8e5b40"/><stop offset="1" stop-color="#d9a985"/></linearGradient>
+      <radialGradient id="flangeG" cx=".5" cy=".42" r=".6">
+        <stop offset=".8" stop-color="#132552"/><stop offset="1" stop-color="#060d1e"/></radialGradient>
+      <linearGradient id="strapG" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#160d08"/><stop offset=".5" stop-color="#3a2216"/><stop offset="1" stop-color="#160d08"/></linearGradient>
+      <linearGradient id="fadeT" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000"/><stop offset=".75" stop-color="#fff"/></linearGradient>
+      <linearGradient id="fadeB" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#000"/><stop offset=".75" stop-color="#fff"/></linearGradient>
+      <mask id="mT" maskUnits="userSpaceOnUse"><rect x="0" y="-10" width="500" height="80" fill="url(#fadeT)"/></mask>
+      <mask id="mB" maskUnits="userSpaceOnUse"><rect x="0" y="430" width="500" height="80" fill="url(#fadeB)"/></mask>
+      <linearGradient id="glassG" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#fff" stop-opacity=".14"/><stop offset=".38" stop-color="#fff" stop-opacity=".02"/>
+        <stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      <clipPath id="dialClip"><circle cx="${C}" cy="${C}" r="166"/></clipPath>
+      <filter id="sh" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="1.2" dy="2" stdDeviation="1.2" flood-color="#000" flood-opacity=".55"/></filter>
+      <filter id="blur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="16"/></filter>
+      <filter id="soft"><feGaussianBlur stdDeviation="5"/></filter>
+    </defs>`;
+
+    // 그림자 · 스트랩 · 러그
+    s += `<ellipse cx="${C}" cy="${C + 20}" rx="200" ry="196" fill="#000" opacity=".65" filter="url(#blur)"/>`;
+    const strap = (d, stitchL, stitchR, mask) => `<g mask="url(#${mask})"><path d="${d}" fill="url(#strapG)"/>
+      <path d="${stitchL}" stroke="#d6aa86" stroke-opacity=".5" stroke-width=".9" stroke-dasharray="4 3" fill="none"/>
+      <path d="${stitchR}" stroke="#d6aa86" stroke-opacity=".5" stroke-width=".9" stroke-dasharray="4 3" fill="none"/></g>`;
+    s += strap('M204,-10 L296,-10 L302,70 L198,70 Z', 'M211,-10 L206,62', 'M289,-10 L294,62', 'mT');
+    s += strap('M198,430 L302,430 L296,510 L204,510 Z', 'M206,438 L211,510', 'M294,438 L289,510', 'mB');
+    for (const [x, y] of [[178, 36], [300, 36], [178, 400], [300, 400]]) {
+      s += `<rect x="${x}" y="${y}" width="22" height="64" rx="9" fill="url(#rose)" stroke="#6f4330" stroke-width=".6"/>`;
+    }
+
+    // 푸셔 · 크라운
+    s += pusher(60, 'pushTop', '시작 / 정지');
+    s += pusher(120, 'pushBottom', '전환 / 다음 안건');
+    s += `<g transform="rotate(90 ${C} ${C})">
+      <rect x="244" y="36" width="12" height="14" fill="url(#roseV)"/>
+      <g class="pusher" id="crown" tabindex="0" role="button" aria-label="모드 전환"><title>크라운 — 빌링 / 회의 모드 전환</title>
+        <rect x="237" y="18" width="26" height="22" rx="4" fill="url(#rose)" stroke="#7c4c35" stroke-width=".6"/>
+        ${Array.from({ length: 9 }, (_, k) => `<line x1="${240 + k * 2.5}" y1="20" x2="${240 + k * 2.5}" y2="38" stroke="#6b3f2a" stroke-opacity=".45" stroke-width=".7"/>`).join('')}
+      </g></g>`;
+
+    // 케이스 · 베젤 · 플랜지
+    s += `<circle cx="${C}" cy="${C}" r="205" fill="url(#caseG)" stroke="#6a402c" stroke-width=".8"/>
+      <circle cx="${C}" cy="${C}" r="203.6" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width=".7"/>
+      <circle cx="${C}" cy="${C}" r="197" fill="url(#bezelG)" stroke="#6e432e" stroke-width=".8"/>
+      <circle cx="${C}" cy="${C}" r="196" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width=".6"/>
+      <circle cx="${C}" cy="${C}" r="184.5" fill="url(#flangeG)" stroke="#000" stroke-opacity=".5" stroke-width="1"/>`;
+    for (let i = 0; i < 60; i++) {
+      const deg = i * 6;
+      if (i % 5 === 0) {
+        const [x, y] = P(176.5, deg);
+        s += `<text x="${f(x)}" y="${f(y)}" transform="rotate(${deg} ${f(x)} ${f(y)})" font-family="Jost, sans-serif" font-size="6.6" font-weight="500" fill="#e6b896" text-anchor="middle" dominant-baseline="central">${i === 0 ? 60 : i}</text>`;
+      } else {
+        s += tick(173, 180, deg, 0.6, '#c9d2e4', C, C, 0.6);
+      }
+    }
+    s += `<circle cx="${C}" cy="${C}" r="168.6" fill="none" stroke="#fff" stroke-opacity=".05" stroke-width="3"/>
+      <path id="arcAlloc" fill="none" stroke="#e6b896" stroke-opacity=".28" stroke-width="3"/>
+      <path id="arcElapsed" fill="none" stroke="#e6b896" stroke-width="3" stroke-linecap="round"/>
+      <path id="arcOver" fill="none" stroke="#e8604a" stroke-width="3" stroke-linecap="round"/>`;
+
+    // 다이얼
+    s += `<g clip-path="url(#dialClip)">
+      <image href="${dial}" x="84" y="84" width="332" height="332" preserveAspectRatio="none"/>
+      ${sheen ? `<g id="sheen"><image href="${sheen}" x="34" y="34" width="432" height="432" style="mix-blend-mode:screen"/></g>` : ''}
+    </g>`;
+    for (let i = 0; i < 240; i++) {
+      if (i % 20 === 0) s += tick(151, 162, i * 1.5, 1.1, '#efe7dc', C, C, 0.95);
+      else if (i % 4 === 0) s += tick(155, 162, i * 1.5, 0.75, '#efe7dc', C, C, 0.85);
+      else s += tick(158.5, 162, i * 1.5, 0.4, '#efe7dc', C, C, 0.6);
+    }
+    for (let h = 0; h < 12; h++) {
+      const offs = h === 0 ? [-4.5, 4.5] : [0];
+      for (const o of offs) {
+        s += `<g transform="rotate(${h * 30} ${C} ${C})" filter="url(#sh)">
+          <rect x="${C - 3 + o}" y="${C - 147}" width="6" height="24" rx="1.2" fill="url(#rose)"/>
+          <rect x="${C - 0.6 + o}" y="${C - 144}" width="1.2" height="18" fill="#5a3826" opacity=".5"/></g>`;
+      }
+    }
+    s += `<text x="${C}" y="165" font-family="Cormorant Garamond, serif" font-size="17" font-weight="500" letter-spacing="4.5" fill="url(#rose)" text-anchor="middle">AURÈLE</text>
+      <text x="${C}" y="177" font-family="Jost, sans-serif" font-size="5.2" letter-spacing="2.6" fill="#dfe6f3" opacity=".7" text-anchor="middle">CHRONOGRAPHE CONSEIL</text>`;
+
+    s += subdial(325, C, 30, 5, [['30', 0], ['10', 120], ['20', 240]], 'MIN', 'hSub3');
+    s += subdial(C, 325, 12, 3, [['12', 0], ['3', 90], ['6', 180], ['9', 270]], 'HRS', 'hSub6');
+    s += subdial(175, C, 60, 5, [['60', 0], ['20', 120], ['40', 240]], 'SEC', 'hSub9');
+
+    // 4시 30분 창
+    s += `<rect x="305" y="320" width="48" height="17" rx="2" fill="#f4efe7" stroke="url(#rose)" stroke-width="1.4"/>
+      <rect x="306" y="321" width="46" height="2.5" fill="#000" opacity=".12"/>
+      <text id="apText" x="329" y="329.2" font-family="Jost, sans-serif" font-size="8.6" font-weight="500" fill="#1b1714" text-anchor="middle" dominant-baseline="central"></text>`;
+
+    // 핸즈
+    s += `<g id="hHour" filter="url(#sh)">
+        <path d="M250,268 L244.2,250 L250,160 Z" fill="#f8dfc8"/><path d="M250,268 L255.8,250 L250,160 Z" fill="#b57b58"/></g>
+      <g id="hMin" filter="url(#sh)">
+        <path d="M250,272 L245.4,250 L250,104 Z" fill="#f8dfc8"/><path d="M250,272 L254.6,250 L250,104 Z" fill="#b57b58"/></g>
+      <g id="hChrono" filter="url(#sh)">
+        <line x1="250" y1="292" x2="250" y2="92" stroke="#e8604a" stroke-width="1.3"/>
+        <circle cx="250" cy="281" r="4.4" fill="none" stroke="#e8604a" stroke-width="1.7"/>
+        <path d="M250,89 L247.6,99 L252.4,99 Z" fill="#e8604a"/></g>
+      <circle cx="${C}" cy="${C}" r="6.5" fill="url(#rose)" filter="url(#sh)"/>
+      <circle cx="${C}" cy="${C}" r="3" fill="#e8604a"/>
+      <circle cx="${C}" cy="${C}" r="1.1" fill="#2a1a12"/>`;
+
+    // 사파이어 글라스
+    s += `<g pointer-events="none">
+      <circle cx="${C}" cy="${C}" r="184" fill="url(#glassG)"/>
+      <g id="glare"><path d="M108,196 A150,150 0 0 1 238,98" stroke="#fff" stroke-opacity=".13" stroke-width="16" fill="none" stroke-linecap="round" filter="url(#soft)"/></g>
+    </g>`;
+
+    svg.innerHTML = s;
+  }
+
+  /* ================= watch animation ================= */
+  let H = {};
+  let disp = { chrono: 0, min30: 0, hr12: 0 };
+  let fly = null;
+  function flyback() { fly = { start: performance.now(), from: { ...disp } }; }
+  const rot = (el, deg, cx = C, cy = C) => el && el.setAttribute('transform', `rotate(${deg.toFixed(3)} ${cx} ${cy})`);
+
+  function chrono() {
+    if (state.source === 'meeting') {
+      const m = M(), it = m.items[m.current];
+      return {
+        ms: itemMs(m.current),
+        running: m.running,
+        alloc: it ? (+it.minutes || 0) * 60000 : null,
+        mode: '회의',
+        label: it ? `안건 ${m.current + 1}/${m.items.length} · ${it.title}` : '안건 없음',
+      };
+    }
+    const p = selectedProject(), a = active();
+    return {
+      ms: p ? totals(dayStart(), p.id).ms : 0,
+      running: !!(a && p && a.projectId === p.id),
+      alloc: null,
+      mode: '빌링',
+      label: p ? `${p.client} — ${p.name}` : '프로젝트 없음',
+    };
+  }
+
+  let pointer = { x: 0, y: 0 }, sheenAngle = 0, glare = { x: 0, y: 0 };
+  window.addEventListener('pointermove', e => {
+    pointer.x = e.clientX / innerWidth - 0.5;
+    pointer.y = e.clientY / innerHeight - 0.5;
+  });
+
+  const cache = {};
+  const setText = (el, key, val, html) => { if (cache[key] !== val) { cache[key] = val; el[html ? 'innerHTML' : 'textContent'] = val; } };
+  let lastLive = 0;
+
+  function frame(t) {
+    const now = new Date();
+    const sec = now.getSeconds() + now.getMilliseconds() / 1000;
+    const min = now.getMinutes() + sec / 60;
+    const hr = (now.getHours() % 12) + min / 60;
+    rot(H.hour, hr * 30);
+    rot(H.min, min * 6);
+    rot(H.sub9, sec * 6, 175, C);
+
+    const c = chrono();
+    const target = {
+      chrono: (c.ms / 1000 % 60) * 6,
+      min30: (c.ms / 60000 % 30) * 12,
+      hr12: (c.ms / 3600000 % 12) * 30,
+    };
+    if (fly) {
+      const k = Math.min(1, (t - fly.start) / 650), e = 1 - Math.pow(1 - k, 3);
+      for (const key in target) disp[key] = fly.from[key] + (target[key] - fly.from[key]) * e;
+      if (k >= 1) fly = null;
+    } else disp = target;
+    rot(H.chrono, disp.chrono);
+    rot(H.sub3, disp.min30, 325, C);
+    rot(H.sub6, disp.hr12, C, 325);
+
+    // 플랜지 아크
+    const em = c.ms / 60000;
+    if (c.alloc != null) {
+      const am = c.alloc / 60000;
+      H.arcAlloc.setAttribute('d', arcPath(168.6, 0, Math.min(am, 60) * 6));
+      H.arcElapsed.setAttribute('d', arcPath(168.6, 0, Math.min(em, am, 60) * 6));
+      H.arcOver.setAttribute('d', em > am && am < 60 ? arcPath(168.6, am * 6, Math.min(em, 60) * 6) : '');
+    } else {
+      H.arcAlloc.setAttribute('d', '');
+      H.arcElapsed.setAttribute('d', arcPath(168.6, 0, (em % 60) * 6));
+      H.arcOver.setAttribute('d', '');
+    }
+
+    // 다이얼 빛 반사
+    const idle = Math.sin(t / 4200) * 6;
+    sheenAngle += (pointer.x * 60 + idle - sheenAngle) * 0.06;
+    glare.x += (pointer.x * 14 - glare.x) * 0.06;
+    glare.y += (pointer.y * 10 - glare.y) * 0.06;
+    if (H.sheen) H.sheen.setAttribute('transform', `rotate(${sheenAngle.toFixed(2)} ${C} ${C})`);
+    H.glare.setAttribute('transform', `translate(${glare.x.toFixed(2)} ${glare.y.toFixed(2)})`);
+
+    // 창 · 리드아웃
+    const todayP = state.source === 'billing' && selectedProject() ? totals(dayStart(), selectedProject().id) : null;
+    const apText = state.source === 'meeting'
+      ? (cost(mtgTotal()) >= 10000 ? '₩' + Math.floor(cost(mtgTotal()) / 10000).toLocaleString('ko-KR') + '만' : won(cost(mtgTotal())))
+      : fmtH(todayP ? todayP.bill : 0);
+    setText(H.ap, 'ap', apText);
+    setText($('#roLabel'), 'label', `<span class="mode">${c.mode}</span>${esc(c.label)}`, true);
+    setText($('#roTime'), 'time', `${hms(c.ms)}<small>.${Math.floor(c.ms / 100) % 10}</small>`, true);
+    let sub;
+    if (state.source === 'meeting') {
+      const left = (c.alloc || 0) - c.ms;
+      const lt = left >= 0 ? `남은 시간 ${mmss(left)}` : `<span class="over">초과 +${mmss(left)}</span>`;
+      sub = `${c.running ? '' : '일시정지 · '}${lt} · 비용 ${won(cost(mtgTotal()))}`;
+    } else {
+      const a = active();
+      sub = c.running ? `이번 세션 ${hms(sessMs(a))} · 오늘 청구 ${fmtH(todayP.bill)}`
+        : `${a ? '다른 프로젝트 진행 중 · ' : '정지 · '}오늘 청구 ${fmtH(todayP ? todayP.bill : 0)}`;
+    }
+    setText($('#roSub'), 'sub', sub, true);
+
+    // 회의 안건 시간 종료 알림
+    const m = M();
+    if (m.running) {
+      const it = m.items[m.current];
+      if (it && !it.chimed && +it.minutes > 0 && itemMs(m.current) >= it.minutes * 60000) {
+        it.chimed = true; save(); chime();
+        toast(`‘${it.title}’ 배정 시간이 끝났습니다`);
+      }
+    }
+
+    if (t - lastLive > 120) { lastLive = t; live(); }
+    requestAnimationFrame(frame);
+  }
+
+  /* ================= panel ================= */
+  const panel = $('#panel');
+  const icon = {
+    play: '<svg width="12" height="12" viewBox="0 0 12 12"><path d="M3 1.5v9l7.5-4.5z" fill="currentColor"/></svg>',
+    pause: '<svg width="12" height="12" viewBox="0 0 12 12"><rect x="2.5" y="1.5" width="2.4" height="9" rx=".6" fill="currentColor"/><rect x="7.1" y="1.5" width="2.4" height="9" rx=".6" fill="currentColor"/></svg>',
+  };
+
+  function renderPanel() {
+    const a = active(), m = M();
+    const tabs = `<nav class="tabs">
+      <button class="tab ${state.tab === 'billing' ? 'on' : ''}" data-tab="billing">빌링${a ? '<span class="dot"></span>' : ''}</button>
+      <button class="tab ${state.tab === 'meeting' ? 'on' : ''}" data-tab="meeting">회의${m.running ? '<span class="dot"></span>' : ''}</button>
+      <button class="tab ${state.tab === 'timesheet' ? 'on' : ''}" data-tab="timesheet">타임시트</button>
+    </nav>`;
+    const body = state.tab === 'meeting' ? meetingView() : state.tab === 'timesheet' ? sheetView() : billingView();
+    panel.innerHTML = tabs + body;
+    for (const k in cache) if (k.startsWith('p:')) delete cache[k];
+    live();
+  }
+
+  function billingView() {
+    const a = active(), sel = selectedProject();
+    const rows = state.projects.map((p, i) => `
+      <div class="proj ${a && a.projectId === p.id ? 'active' : ''} ${sel && sel.id === p.id ? 'sel' : ''}" data-pid="${p.id}">
+        <div class="key">${i < 9 ? i + 1 : ''}</div>
+        <div><div class="client">${esc(p.client)}</div><div class="pname">${esc(p.name)}</div></div>
+        <div class="ptime"><div class="t" data-live="pt">00:00:00</div><div class="b" data-live="pb">0.0h</div></div>
+        <button class="play" data-act="play" aria-label="시작/정지">${a && a.projectId === p.id ? icon.pause : icon.play}</button>
+        <button class="del" data-act="delProj" aria-label="삭제">×</button>
+      </div>`).join('');
+    return `
+      <div class="stats">
+        <div><div class="eyebrow">오늘 청구 가능</div><div class="figure" id="todayBill">0.0<span class="unit">h</span></div></div>
+        <div><div class="eyebrow">실제 투입</div><div class="figure sm" id="todayActual">0:00</div></div>
+        <div><div class="eyebrow">청구 단위</div><div class="figure sm">0.1<span class="unit">h</span></div></div>
+      </div>
+      <div class="eyebrow row-title">프로젝트 <span class="hint">클릭으로 시작 · 다른 프로젝트를 누르면 자동 전환</span></div>
+      <div class="projects">${rows || '<div class="empty">아래에서 첫 프로젝트를 추가하세요.</div>'}</div>
+      <form class="add" id="addProj" autocomplete="off">
+        <input class="field" name="client" placeholder="클라이언트" required>
+        <input class="field" name="name" placeholder="프로젝트명" required>
+        <button class="btn sm">추가</button>
+      </form>
+      ${a ? `<div class="note-box">
+        <div class="eyebrow">작업 메모 — ${esc(proj(a.projectId)?.client)}</div>
+        <textarea class="field" id="note" placeholder="지금 하고 있는 일을 적어 두면 타임시트에 함께 기록됩니다">${esc(a.note)}</textarea>
+      </div>` : ''}`;
+  }
+
+  function meetingView() {
+    const m = M();
+    const opts = state.projects.map(p => `<option value="${p.id}" ${m.projectId === p.id ? 'selected' : ''}>${esc(p.client)} — ${esc(p.name)}</option>`).join('');
+    const items = m.items.map((it, i) => `
+      <div class="item ${i === m.current ? 'cur' : ''} ${i < m.current ? 'done' : ''}" data-i="${i}">
+        <div class="num">${pad(i + 1)}</div>
+        <input class="field bare" data-it="title" value="${esc(it.title)}" aria-label="안건명">
+        <div class="it-min"><input class="field bare" type="number" min="0" data-it="minutes" value="${esc(it.minutes)}" aria-label="배정 시간(분)">분</div>
+        <div class="it-time" data-live="it">00:00</div>
+        <button class="del" data-act="delItem" aria-label="안건 삭제">×</button>
+        <div class="bar"><i data-live="ib"></i></div>
+      </div>`).join('');
+    return `
+      <div class="cost-card">
+        <div class="eyebrow">회의 비용 · 실시간</div>
+        <div class="figure xl" id="mCost">₩0</div>
+        <div class="cost-sub" id="mCostSub"></div>
+        <div class="meter" id="mMeter"><i id="mBar"></i></div>
+        <div class="meter-label"><span id="mTotal">00:00:00</span><span id="mPlan"></span></div>
+      </div>
+      <div class="grid2">
+        <label class="wide">회의명<input class="field" data-m="title" value="${esc(m.title)}"></label>
+        <label>참석자 (명)<input class="field" type="number" min="1" data-m="attendees" value="${esc(m.attendees)}"></label>
+        <label>인당 시간 단가 (₩)<input class="field" type="number" min="0" step="10000" data-m="rate" value="${esc(m.rate)}"></label>
+        <label class="wide">종료 시 타임시트 기록<select class="field" data-m="projectId"><option value="">기록하지 않음</option>${opts}</select></label>
+      </div>
+      <div class="eyebrow row-title">안건 <span class="hint">안건을 누르면 그 안건으로 이동</span></div>
+      <div class="agenda">${items || '<div class="empty">안건을 추가하세요.</div>'}</div>
+      <button class="btn ghost sm" data-act="addItem" style="margin-top:10px">+ 안건 추가</button>
+      <div class="actions-row">
+        <button class="btn primary ${m.running ? 'running' : ''}" data-act="mToggle">${m.running ? '일시정지' : m.startedAt ? '재개' : '회의 시작'}</button>
+        <button class="btn" data-act="mNext">다음 안건</button>
+        <button class="btn danger" data-act="mEnd">회의 종료</button>
+      </div>`;
+  }
+
+  function rangeStart() { return state.range === 'week' ? weekStart() : state.range === 'all' ? 0 : dayStart(); }
+  function rangeSessions() { const rs = rangeStart(); return state.sessions.filter(s => s.start >= rs).sort((a, b) => b.start - a.start); }
+
+  function sheetView() {
+    const list = rangeSessions();
+    const by = new Map();
+    for (const s of list) {
+      const o = by.get(s.projectId) || { ms: 0, bill: 0 };
+      const d = sessMs(s);
+      o.ms += d; o.bill += billH(d);
+      by.set(s.projectId, o);
+    }
+    const tot = totals(rangeStart());
+    const sumRows = [...by].map(([pid, o]) => {
+      const p = proj(pid) || { client: '(삭제됨)', name: '' };
+      return `<tr><td><span class="c">${esc(p.client)}</span>${esc(p.name)}</td><td class="r">${shortDur(o.ms)}</td><td class="r b">${fmtH(round1(o.bill))}</td></tr>`;
+    }).join('');
+    const sess = list.map(s => {
+      const p = proj(s.projectId) || { client: '(삭제됨)', name: '' };
+      const d = sessMs(s);
+      return `<div class="sess" data-sid="${s.id}">
+        <div class="when">${md(s.start)}<br>${hm(s.start)}–${s.end ? hm(s.end) : '<span class="live">진행 중</span>'}</div>
+        <div class="what"><div class="p">${esc(p.client)} · ${esc(p.name)}</div>
+          <input class="field bare" data-note="${s.id}" value="${esc(s.note)}" placeholder="메모 추가"></div>
+        <div class="dur">${shortDur(d)}<b>${fmtH(billH(d))}</b></div>
+        <button class="del" data-act="delSess" aria-label="기록 삭제">×</button>
+      </div>`;
+    }).join('');
+    const rb = (k, t) => `<button data-range="${k}" class="${state.range === k ? 'on' : ''}">${t}</button>`;
+    return `
+      <div class="seg">${rb('today', '오늘')}${rb('week', '이번 주')}${rb('all', '전체')}</div>
+      <div class="stats">
+        <div><div class="eyebrow">청구 합계</div><div class="figure">${tot.bill.toFixed(1)}<span class="unit">h</span></div></div>
+        <div><div class="eyebrow">실제 투입</div><div class="figure sm">${shortDur(tot.ms)}</div></div>
+        <div><div class="eyebrow">세션</div><div class="figure sm">${tot.count}</div></div>
+      </div>
+      ${sumRows ? `<div class="eyebrow row-title">프로젝트별</div>
+      <table class="sum"><thead><tr><th>프로젝트</th><th class="r">실제</th><th class="r">청구</th></tr></thead><tbody>${sumRows}</tbody></table>` : ''}
+      <div class="eyebrow row-title">세션 기록 <span class="hint">세션마다 0.1h 단위 올림</span></div>
+      <div class="sessions">${sess || '<div class="empty">이 기간에는 기록이 없습니다.</div>'}</div>
+      <div class="export">
+        <span class="hint">엑셀에서 바로 열리는 CSV로 저장합니다</span>
+        <button class="btn primary" data-act="csv" ${list.length ? '' : 'disabled'}>CSV 내보내기</button>
+      </div>`;
+  }
+
+  function live() {
+    if (state.tab === 'billing') {
+      const ds = dayStart(), all = totals(ds);
+      const tb = $('#todayBill'), ta = $('#todayActual');
+      if (tb) setText(tb, 'p:tb', `${all.bill.toFixed(1)}<span class="unit">h</span>`, true);
+      if (ta) setText(ta, 'p:ta', `${Math.floor(all.ms / 3600000)}:${pad(Math.floor(all.ms / 60000) % 60)}`);
+      panel.querySelectorAll('.proj').forEach(row => {
+        const o = totals(ds, row.dataset.pid);
+        setText(row.querySelector('[data-live=pt]'), 'p:pt' + row.dataset.pid, hms(o.ms));
+        setText(row.querySelector('[data-live=pb]'), 'p:pb' + row.dataset.pid, `청구 ${fmtH(o.bill)}`);
+      });
+    } else if (state.tab === 'meeting') {
+      const m = M(), total = mtgTotal(), plan = mtgPlanned();
+      setText($('#mCost'), 'p:mc', won(cost(total)));
+      setText($('#mCostSub'), 'p:ms', `${+m.attendees || 0}명 × 인당 ${won(+m.rate || 0)}/h · 분당 ${won(cost(60000))}`);
+      setText($('#mTotal'), 'p:mt', `경과 ${hms(total)}`);
+      setText($('#mPlan'), 'p:mp', `계획 ${Math.round(plan / 60000)}분`);
+      $('#mBar').style.width = (plan ? Math.min(100, total / plan * 100) : 0) + '%';
+      $('#mMeter').classList.toggle('over', total > plan && plan > 0);
+      panel.querySelectorAll('.item').forEach(row => {
+        const i = +row.dataset.i, it = m.items[i], ms = itemMs(i), al = (+it.minutes || 0) * 60000;
+        setText(row.querySelector('[data-live=it]'), 'p:it' + i, mmss(ms));
+        row.querySelector('[data-live=ib]').style.width = (al ? Math.min(100, ms / al * 100) : 0) + '%';
+        row.classList.toggle('over', al > 0 && ms > al);
+      });
+    }
+  }
+
+  function renderControls() {
+    const meeting = state.source === 'meeting';
+    const running = meeting ? M().running : !!active();
+    const bp = $('#btnPrimary');
+    bp.textContent = running ? '정지' : '시작';
+    bp.classList.toggle('running', running);
+    $('#btnSecondary').textContent = meeting ? '다음 안건' : '프로젝트 전환';
+    $('#hints').innerHTML = `<kbd>Space</kbd> 시작·정지 &nbsp; <kbd>N</kbd> ${meeting ? '다음 안건' : '프로젝트 전환'} &nbsp; ${meeting ? '' : '<kbd>1</kbd>–<kbd>9</kbd> 프로젝트 바로 시작 &nbsp; '}<kbd>M</kbd> 모드 전환`;
+    const sb = $('#soundBtn');
+    sb.textContent = state.sound ? '♪ 알림음 켜짐' : '♪ 알림음 꺼짐';
+    sb.classList.toggle('on', state.sound);
+  }
+
+  /* ================= CSV ================= */
+  function exportCSV() {
+    const rows = [['날짜', '클라이언트', '프로젝트', '시작', '종료', '실제(분)', '청구(시간)', '메모']];
+    rangeSessions().reverse().forEach(s => {
+      const p = proj(s.projectId) || {};
+      const d = sessMs(s);
+      rows.push([ymd(s.start), p.client, p.name, hm(s.start), s.end ? hm(s.end) : '진행 중', Math.round(d / 60000), billH(d).toFixed(1), s.note]);
+    });
+    const csv = '﻿' + rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `timesheet_${ymd(Date.now())}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast('타임시트를 CSV로 저장했습니다');
+  }
+
+  /* ================= toast ================= */
+  let toastTimer;
+  function toast(msg) {
+    const el = $('#toast');
+    el.textContent = msg;
+    el.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('on'), 2800);
+  }
+
+  /* ================= events ================= */
+  panel.addEventListener('click', e => {
+    const t = e.target;
+    const tab = t.closest('[data-tab]');
+    if (tab) return setTab(tab.dataset.tab);
+    const rg = t.closest('[data-range]');
+    if (rg) { state.range = rg.dataset.range; return commit(); }
+    const act = t.closest('[data-act]');
+    if (act) {
+      const a = act.dataset.act, m = M();
+      if (a === 'play') return startProject(act.closest('.proj').dataset.pid);
+      if (a === 'delProj') {
+        const pid = act.closest('.proj').dataset.pid, p = proj(pid);
+        if (!confirm(`‘${p.client} — ${p.name}’ 프로젝트와 기록을 모두 삭제할까요?`)) return;
+        if (active()?.projectId === pid) state.activeSessionId = null;
+        state.projects = state.projects.filter(x => x.id !== pid);
+        state.sessions = state.sessions.filter(s => s.projectId !== pid);
+        if (state.selectedProjectId === pid) { state.selectedProjectId = state.projects[0]?.id || null; flyback(); }
+        if (m.projectId === pid) m.projectId = '';
+        return commit();
+      }
+      if (a === 'addItem') {
+        m.items.push({ id: uid(), title: '새 안건', minutes: 10, spent: 0, chimed: false });
+        commit();
+        const inputs = panel.querySelectorAll('[data-it=title]');
+        const last = inputs[inputs.length - 1];
+        if (last) { last.focus(); last.select(); }
+        return;
+      }
+      if (a === 'delItem') {
+        const i = +act.closest('.item').dataset.i;
+        mtgCommit();
+        m.items.splice(i, 1);
+        if (i < m.current || m.current >= m.items.length) { m.current = Math.max(0, m.current - 1); flyback(); }
+        if (!m.items.length) m.running = false;
+        return commit();
+      }
+      if (a === 'mToggle') return mtgToggle();
+      if (a === 'mNext') return mtgNext();
+      if (a === 'mEnd') return mtgEnd();
+      if (a === 'csv') return exportCSV();
+      if (a === 'delSess') {
+        const sid = act.closest('.sess').dataset.sid;
+        if (!confirm('이 기록을 삭제할까요?')) return;
+        if (state.activeSessionId === sid) state.activeSessionId = null;
+        state.sessions = state.sessions.filter(s => s.id !== sid);
+        return commit();
+      }
+    }
+    if (t.closest('input, textarea, select, button')) return;
+    const row = t.closest('.proj');
+    if (row) return startProject(row.dataset.pid);
+    const item = t.closest('.item');
+    if (item) return mtgJump(+item.dataset.i);
+  });
+
+  panel.addEventListener('submit', e => {
+    if (e.target.id !== 'addProj') return;
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const client = fd.get('client').trim(), name = fd.get('name').trim();
+    if (!client || !name) return;
+    const p = { id: uid(), client, name };
+    state.projects.push(p);
+    if (!state.selectedProjectId) state.selectedProjectId = p.id;
+    commit();
+    toast(`‘${client}’ 프로젝트를 추가했습니다`);
+  });
+
+  panel.addEventListener('input', e => {
+    const t = e.target, m = M();
+    if (t.dataset.m) {
+      const k = t.dataset.m;
+      m[k] = (k === 'attendees' || k === 'rate') ? Math.max(0, +t.value || 0) : t.value;
+    } else if (t.dataset.it) {
+      const it = m.items[+t.closest('.item').dataset.i];
+      if (t.dataset.it === 'minutes') { it.minutes = Math.max(0, +t.value || 0); it.chimed = false; }
+      else it.title = t.value;
+    } else if (t.id === 'note') {
+      const a = active(); if (a) a.note = t.value;
+    } else if (t.dataset.note) {
+      const s = state.sessions.find(x => x.id === t.dataset.note); if (s) s.note = t.value;
+    } else return;
+    save();
+  });
+
+  $('#btnPrimary').addEventListener('click', () => { click(); primaryAction(); });
+  $('#btnSecondary').addEventListener('click', () => { click(); secondaryAction(); });
+  $('#soundBtn').addEventListener('click', () => { state.sound = !state.sound; if (state.sound) chime(); commit(); });
+
+  function bindPusher(id, fn) {
+    const el = document.getElementById(id);
+    const press = () => { el.classList.add('pressed'); click(); setTimeout(() => el.classList.remove('pressed'), 140); fn(); };
+    el.addEventListener('click', press);
+    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); press(); } });
+  }
+  const toggleMode = () => setTab(state.source === 'meeting' ? 'billing' : 'meeting');
+
+  document.addEventListener('keydown', e => {
+    if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.target.closest && e.target.closest('input, textarea, select, button, [role=button]')) return;
+    const press = id => { const el = document.getElementById(id); el.classList.add('pressed'); setTimeout(() => el.classList.remove('pressed'), 140); click(); };
+    if (e.code === 'Space') { e.preventDefault(); press('pushTop'); primaryAction(); }
+    else if (e.key === 'n' || e.key === 'N') { press('pushBottom'); secondaryAction(); }
+    else if (e.key === 'm' || e.key === 'M') { press('crown'); toggleMode(); }
+    else if (/^[1-9]$/.test(e.key) && state.source === 'billing') {
+      const p = state.projects[+e.key - 1];
+      if (p) { click(); startProject(p.id); }
+    }
+  });
+
+  /* ================= boot ================= */
+  buildWatch();
+  H = {
+    hour: $('#hHour'), min: $('#hMin'), chrono: $('#hChrono'),
+    sub3: $('#hSub3'), sub6: $('#hSub6'), sub9: $('#hSub9'),
+    arcAlloc: $('#arcAlloc'), arcElapsed: $('#arcElapsed'), arcOver: $('#arcOver'),
+    sheen: $('#sheen'), glare: $('#glare'), ap: $('#apText'),
+  };
+  bindPusher('pushTop', primaryAction);
+  bindPusher('pushBottom', secondaryAction);
+  bindPusher('crown', toggleMode);
+  $('#date').textContent = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
+
+  disp = { chrono: 0, min30: 0, hr12: 0 };
+  flyback();                     // 처음 열 때 바늘이 제자리로 쓸려 가는 연출
+  renderPanel();
+  renderControls();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
